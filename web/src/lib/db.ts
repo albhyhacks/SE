@@ -19,3 +19,17 @@ const g = globalThis as unknown as { __moveproofDb?: DatabaseSync };
 export const db = () => (g.__moveproofDb ??= openDb());
 
 export const now = () => new Date().toISOString();
+
+/** Runs fn inside a transaction; rolls back on any error. */
+export function tx<T>(fn: () => T): T {
+  const d = db();
+  d.exec("begin immediate");
+  try {
+    const out = fn();
+    d.exec("commit");
+    return out;
+  } catch (err) {
+    d.exec("rollback");
+    throw err;
+  }
+}

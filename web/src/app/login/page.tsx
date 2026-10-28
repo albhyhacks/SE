@@ -4,8 +4,7 @@ import { LoginForm } from "./login-form";
 
 export default async function LoginPage({ searchParams }: PageProps<"/login">) {
   const raw = (await searchParams).next;
-  // Only allow same-site relative paths (no open redirect).
-  const next = typeof raw === "string" && raw.startsWith("/") && !raw.startsWith("//") ? raw : "/dashboard";
+  const next = safeNext(raw);
   if (await getUser()) redirect(next);
   return (
     <div className="flex flex-1 flex-col justify-center gap-6">
@@ -16,4 +15,15 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
       <LoginForm next={next} />
     </div>
   );
+}
+
+// Only same-origin paths; "//x" and "/\\x" would otherwise leave the site.
+function safeNext(raw: unknown) {
+  if (typeof raw !== "string" || !/^\/(?![\\/])/.test(raw)) return "/dashboard";
+  try {
+    const u = new URL(raw, "http://local.invalid");
+    return u.origin === "http://local.invalid" ? u.pathname + u.search : "/dashboard";
+  } catch {
+    return "/dashboard";
+  }
 }

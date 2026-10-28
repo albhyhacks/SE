@@ -70,7 +70,7 @@ Update this file **as you work, not only at the end**, so an interrupted session
 | --- | --- | --- |
 | 0 | Setup and scaffolding | Done |
 | 1 | Database, storage and auth | Done |
-| 2 | Tenancy, templates, invites, India rules | Not started |
+| 2 | Tenancy, templates, invites, India rules | Done |
 | 3 | Live capture, hashing, photo upload | Not started |
 | 4 | Review, sign-off and lock | Not started |
 | 5 | Move-out and comparison | Not started |
@@ -81,9 +81,9 @@ Update this file **as you work, not only at the end**, so an interrupted session
 ## 6. Build log
 
 ### Current position
-- Phase: 2 (not started)
-- Last completed task: Phase 1 done and committed
-- Next action: start `phases/PHASE_02_tenancy_templates.md` (use `db()` wherever it says admin client)
+- Phase: 3 (not started)
+- Last completed task: Phase 2 done and committed
+- Next action: start `phases/PHASE_03_capture.md` (photos go to local disk via a server action / route, not Supabase Storage)
 - Open HUMAN STEPs: none
 
 <!-- Claude Code: append phase logs below this line, newest at the bottom. -->
@@ -115,3 +115,18 @@ Next: Phase 1 — Database, storage and auth (after HUMAN STEP).
 
 Summary: Supabase swapped for SQLite (`node:sqlite`) per human request. Schema + all lock triggers ported to `web/db/schema.sql`, stricter (OLD and NEW rows checked, no cross-tenancy items). Own email-OTP auth with hashed codes and hashed session tokens; in local mode the code is printed in the `npm run dev` terminal.
 Next: Phase 2 — Tenancy, templates, invites, India rules.
+
+### Phase 2 — started 2026-10-28 22:15
+- [x] 2.1 depositCapMonths/depositWarning/refundDueDate + 3 Vitest tests — files: web/src/lib/india-rules.ts, india-rules.test.ts — notes: refund date clamps 31 Jan → 28 Feb
+- [x] 2.2 Templates (PG single/shared, 1BHK, 2BHK; overview first in every room) — files: web/src/lib/templates.ts; added tx() helper in db.ts (transactions instead of manual cleanup)
+- [x] 2.3 /tenancies/new form (live deposit warning) + createTenancy action in one transaction (tenancy, member, MOVE_IN report, rooms, items, entries) — files: web/src/app/tenancies/new/*
+- [x] 2.4 Dashboard lists tenancies with move-in/out badges — files: web/src/app/dashboard/page.tsx, web/src/lib/tenancies.ts, web/src/components/status-badge.tsx — notes: added lib/tenancies.ts (queries) not in SPEC §8 map
+- [x] 2.5 Tenancy home /t/[id] (requireMember, parties, deposit warning, report cards, last 20 audit events) — files: web/src/app/t/[id]/page.tsx
+- [x] 2.6 Invite link + WhatsApp wa.me share + copy — files: web/src/app/t/[id]/invite-share.tsx
+- [x] 2.7 /join/[code]: role picked server-side, already-member redirect, full tenancy refused — files: web/src/app/join/[code]/*
+- [x] 2.8 Report page placeholder + checklist editor (add/rename/remove rooms & items; overview item fixed; new items get move-in entries; initiator + DRAFT guard server-side, ids scoped to tenancy) — files: web/src/lib/reports.ts (loadReport tree), web/src/app/t/[id]/r/[reportId]/* — notes: typecheck script now runs `next typegen` first
+- Security fix: /login `next` now resolved against a fixed origin (blocked `/\\evil.com` open redirect). WhatsApp button colour fixed with cn() (buttonVariants does not merge classes).
+- Acceptance (Playwright, 360 px, `next start`): TN rent 8000 / deposit 40000 → "5 months' rent … caps it at 3 months"; wa.me link contains invite link; owner joins via link and shows on home; third account refused at /join and redirected away from /t/[id]; audit shows "Tenancy created", "Checklist edited", "Owner joined"; non-initiator sees no checklist editor. lint, typecheck, test (3), build, lock-check pass. WhatsApp on a real phone not tested yet (human, during Phase 3 phone test).
+
+Summary: Tenancies can be created from 4 templates with a live deposit-cap warning (TN/MTA), in a single transaction that also creates the move-in report and its entries. Invite link with WhatsApp/copy share, server-decided join role, tenancy home with parties, report cards and audit log. Initiator can edit the checklist while move-in is Draft.
+Next: Phase 3 — Live capture, hashing, photo upload.
