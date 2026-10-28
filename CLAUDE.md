@@ -71,9 +71,9 @@ Update this file **as you work, not only at the end**, so an interrupted session
 | 0 | Setup and scaffolding | Done |
 | 1 | Database, storage and auth | Done |
 | 2 | Tenancy, templates, invites, India rules | Done |
-| 3 | Live capture, hashing, photo upload | In progress |
-| 4 | Review, sign-off and lock | Not started |
-| 5 | Move-out and comparison | Not started |
+| 3 | Live capture, hashing, photo upload | Done |
+| 4 | Review, sign-off and lock | Done |
+| 5 | Move-out and comparison | In progress |
 | 6 | Deductions and settlement | Not started |
 | 7 | Printable report, QR and verify page | Not started |
 | 8 | Hardening, tests, docs and demo | Not started |
@@ -81,13 +81,26 @@ Update this file **as you work, not only at the end**, so an interrupted session
 ## 6. Build log
 
 ### Current position
-- Phase: 3 (in progress)
-- Last completed task: Phase 2
-- Next action: start `phases/PHASE_03_capture.md` (photos go to local disk via a server action / route, not Supabase Storage)
+- Phase: 5 (in progress)
+- Last completed task: Phase 4 (commit feat(signoff))
+- Next action: `phases/PHASE_05_moveout_compare.md`
 - Open HUMAN STEPs: none
 
 <!-- Claude Code: append phase logs below this line, newest at the bottom. -->
 
+### Phase 4 — started 2026-10-28 (SQLite variant: the “0002_sign_fn.sql Postgres function” HUMAN STEP does not apply; signature insert + status update run in one SQLite transaction with tx())
+- [x] 4.1 hash.ts: canonicalJson (recursive key sort, no whitespace, undefined dropped, throws on non-finite), sha256Hex, buildHashPayload + reportHash per SPEC §6 — files: web/src/lib/hash.ts, hash.test.ts — notes: known fixture pinned to 60cd7a62…40d540cd (8 tests incl. photo order / trim-stability / reviewer_comment excluded)
+- [x] 4.2 state.ts: transition table (DRAFT→REVIEW→DRAFT/LOCKED, self_lock DRAFT|REVIEW→LOCKED), targetStatus, assertTransition, canSubmit/canReview/canSelfLock — files: web/src/lib/state.ts, state.test.ts — notes: full 3×4 status×event matrix plus guard tests (5 tests)
+- [x] 4.3–4.7, 4.4 actions + review UI: submitReport (all-items validation + initiator signature + REVIEW), requestChanges (≥1 comment enforced, deletes signatures, → DRAFT, submitted_at cleared), countersign (seenHash === recomputed === initiator's signed hash, else { stale: true, "report changed" message }), selfLock (members ≤ 1 enforced server-side, self_attested = 1), saveReviewerComment (other party, REVIEW only; editing an item in DRAFT clears its reviewer_comment) — files: web/src/app/t/[id]/r/[reportId]/actions.ts, sign-dialog.tsx, request-changes.tsx, item-comment.tsx, web/src/app/t/[id]/r/[reportId]/item/[itemId]/actions.ts
+- [x] 4.4 review screen embeds the rendered hash on `div[data-report-hash]`; per-item comment inputs; initiator sees 💬 comments highlighted
+- [x] 4.8 locked view: lock time, full hash in monospace + CopyHash button, signer names/roles, self-attested banner; Self-attested yellow badge added to StatusBadge and shown on report + tenancy pages — files: web/src/app/t/[id]/r/[reportId]/page.tsx, copy-hash.tsx, web/src/components/status-badge.tsx, web/src/app/t/[id]/page.tsx
+- [x] 4.9 try-tamper.mjs: attempts an entry UPDATE on a LOCKED report, prints "MoveProof: report is locked and cannot be changed" — files: web/scripts/try-tamper.mjs
+- Fixed during e2e: item page passed node:sqlite row objects to a client component (Next refuses non-plain objects) — now mapped to plain objects; report page hid reviewer comments from the initiator (!canCapture)
+- Acceptance (Playwright e2e, scripts/e2e-phase4.mjs, untracked machine-specific helper; 360 px, two accounts, fake camera): full flow O→T: submit → comment → request changes → edit (comment cleared) → resubmit → stale-tab countersign refused with "report changed" → fresh reload countersign → LOCKED with both signers + copyable hash; locked item page shows edit controls disabled; solo tenancy self-attest → LOCKED + Self-attested badge on report and tenancy home. Unit: 19 tests. lint, typecheck, test, build, lock-check, try-tamper all pass.
+- HUMAN STEP (not needed to continue): real-phone camera test still pending (needs https deploy or tunnel).
+
+Summary: Canonical report hash (SPEC §6) implemented and pinned by fixture tests; state-machine transition table with exhaustive matrix tests backs every action. Submit/sign → review/comment → request changes → resubmit → countersign flow locks the report only when both parties signed the same hash; stale viewer is refused with a reload message by comparing posted hash, recomputed hash and the initiator's signature. Solo tenancy can self-attest lock. Locked reports expose only a read-only view.
+Next: Phase 5 — Move-out report creation and side-by-side comparison.
 ### Phase 0 — started 2026-10-28 21:20
 - [x] 0.1 git init -b main, hooksPath=.githooks, root .gitignore, no remote — files: .gitignore
 - [x] 0.2 Scaffolded web/ with create-next-app — files: web/ — notes: Next.js 16.4.3, React 19.3; web/AGENTS.md warns APIs differ, check node_modules/next/dist/docs

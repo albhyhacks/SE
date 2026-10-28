@@ -36,7 +36,7 @@ export async function saveEntry(tenancyId: string, reportId: string, itemId: str
   const g = await guard(tenancyId, reportId, itemId);
   const v = Entry.safeParse(input);
   if (!v.success) return { error: "Pick a rating and keep notes under 1000 characters." };
-  db().prepare("update entries set rating = ?, notes = ?, updated_at = ? where id = ?")
+  db().prepare("update entries set rating = ?, notes = ?, reviewer_comment = null, updated_at = ? where id = ?")
     .run(v.data.rating, v.data.notes, new Date().toISOString(), g.entry_id);
   revalidatePath(`/t/${tenancyId}/r/${reportId}`, "layout");
   return {};

@@ -18,9 +18,9 @@ export default async function ItemPage({ params }: PageProps<"/t/[id]/r/[reportI
   const { room, item } = flat[idx];
   const next = flat[idx + 1];
   const reportHref = `/t/${id}/r/${reportId}`;
-  const photos = db()
+  const photos = (db()
     .prepare("select id, uploaded_at, source from photos where entry_id = ? order by uploaded_at")
-    .all(item.entry_id) as { id: string; uploaded_at: string; source: string }[];
+    .all(item.entry_id) as { id: string; uploaded_at: string; source: string }[]).map((p) => ({ ...p })); // plain objects for the client component
 
   return (
     <>

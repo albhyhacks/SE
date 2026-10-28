@@ -40,3 +40,12 @@ export function loadReport(tenancyId: string, reportId: string) {
   }));
   return { report, rooms: tree };
 }
+
+export type SignatureRow = { user_id: string; role: "OWNER" | "TENANT"; typed_name: string; report_hash: string; signed_at: string };
+
+/** Signatures of a report, oldest first. Used by the locked view and hashing side-checks. */
+export function listSignatures(reportId: string): SignatureRow[] {
+  return db()
+    .prepare("select user_id, role, typed_name, report_hash, signed_at from signatures where report_id = ? order by signed_at")
+    .all(reportId) as SignatureRow[];
+}
