@@ -14,15 +14,17 @@ MoveProof is a mobile-first web app for Indian rentals and student PGs. At move-
 | --- | --- |
 | App | Next.js (App Router, TypeScript, Server Actions) in `web/` |
 | UI | Tailwind CSS + shadcn/ui, mobile-first (design for 360 px wide first) |
-| Auth | Supabase Auth, email OTP (6-digit code) |
-| Database | Supabase Postgres; schema in `supabase/migrations/` |
-| Photos | Supabase Storage, private bucket `photos`, object name = SHA-256 |
+| Auth | Own email OTP (6-digit code, hashed in DB) + httpOnly session cookie. Local: code printed to server console |
+| Database | SQLite via Node built-in `node:sqlite`; schema in `web/db/schema.sql` (port of `supabase/migrations/0001_init.sql`, same lock triggers) |
+| Photos | Local disk `web/data/photos/<tenancyId>/<sha256>.jpg` (git-ignored), served only through a member-checked route |
 | Hashing | Web Crypto in browser, Node `crypto` on server |
 | Validation | Zod |
 | Tests | Vitest (unit) |
 | PDF | Print stylesheet + browser "Save as PDF" |
 | QR | `qrcode` npm package |
-| Hosting | Vercel (root directory `web/`) — the human deploys |
+| Hosting | Local for now (SQLite needs a persistent disk; Vercel won't keep it) |
+
+> **Stack change 2026-10-28 (human request: "for now use sqlite")**: Supabase replaced by SQLite + own auth + local photo storage. `supabase/` is kept untouched for a possible later switch. Where phases mention Supabase clients / admin client / Storage / RLS, use `src/lib/db.ts` (server-only) instead; the browser never reaches the DB because it is only opened in server code.
 
 ## 3. Non-negotiable rules
 
@@ -34,14 +36,14 @@ MoveProof is a mobile-first web app for Indian rentals and student PGs. At move-
 
 ### Secrets
 - Never print, log or commit keys. Secrets live only in `web/.env.local` (git-ignored). Keep `web/.env.example` updated with names, no values.
-- `SUPABASE_SERVICE_ROLE_KEY` is used **only** in server code (`src/lib/supabase/admin.ts`), never imported into a client component.
+- The database is opened only in `src/lib/db.ts` (`import 'server-only'`), never imported into a client component.
 
 ### Integrity rules (the heart of the project — never weaken)
 - Photos come only from the in-page camera (`getUserMedia`). No `<input type="file">` in production. A dev-only upload exists behind `NEXT_PUBLIC_ALLOW_DEV_UPLOAD=true` and is stored with `source='dev_upload'`.
 - Every photo: SHA-256 computed in browser, recomputed on server after upload; mismatch → reject and delete the object.
 - Report hash = SHA-256 of canonical JSON (see `docs/SPEC.md` §6). A signature stores the hash its signer saw. Second signature is refused if the hash changed.
 - Once a report is `LOCKED`, the DB triggers block changes. Never drop, disable or bypass the triggers, and never add code paths that try.
-- All DB writes happen in server actions using the admin client **after** `requireUser()` and `requireMember()` checks. RLS is enabled on every table with no policies, so the browser can never touch tables directly.
+- All DB writes happen in server actions via `db()` **after** `requireUser()` and `requireMember()` checks. The browser has no DB access path (SQLite file is only opened server-side). `npm run lock-check` must keep passing.
 
 ### Working rules
 - Follow phases in order: `phases/PHASE_00_*.md` → `PHASE_08_*.md`. Do not start a phase until the previous one is marked Done (or the human says to skip).
@@ -67,7 +69,7 @@ Update this file **as you work, not only at the end**, so an interrupted session
 | Phase | Title | Status |
 | --- | --- | --- |
 | 0 | Setup and scaffolding | Done |
-| 1 | Database, storage and auth | Blocked |
+| 1 | Database, storage and auth | Done |
 | 2 | Tenancy, templates, invites, India rules | Not started |
 | 3 | Live capture, hashing, photo upload | Not started |
 | 4 | Review, sign-off and lock | Not started |
@@ -79,10 +81,10 @@ Update this file **as you work, not only at the end**, so an interrupted session
 ## 6. Build log
 
 ### Current position
-- Phase: 1 (blocked on HUMAN STEP)
-- Last completed task: Phase 0 done and committed
-- Next action: when human replies "keys added", start `phases/PHASE_01_database_auth.md`.
-- Open HUMAN STEPs: Supabase project + `web/.env.local` (see Phase 0 log)
+- Phase: 2 (not started)
+- Last completed task: Phase 1 done and committed
+- Next action: start `phases/PHASE_02_tenancy_templates.md` (use `db()` wherever it says admin client)
+- Open HUMAN STEPs: none
 
 <!-- Claude Code: append phase logs below this line, newest at the bottom. -->
 
@@ -100,3 +102,16 @@ Update this file **as you work, not only at the end**, so an interrupted session
 Summary: Next.js 16.4.3 app scaffolded in `web/` with Tailwind 4, shadcn/ui (base-nova / Base UI), Supabase, Zod, qrcode, Vitest. Git initialised with attribution-stripping hooks. Mobile-first shell, landing page and empty `src/lib` modules per SPEC §8.
 HUMAN STEP: 1) supabase.com → New project (region Mumbai ap-south-1), save DB password. 2) Project Settings → API: copy Project URL, anon/publishable key, service_role/secret key. 3) `cp web/.env.example web/.env.local` and paste the three values. 4) Reply "keys added".
 Next: Phase 1 — Database, storage and auth (after HUMAN STEP).
+
+### Phase 1 — started 2026-10-28 21:45 (SQLite variant, Supabase HUMAN STEPs not needed)
+- [x] 1.1 (SQLite) db/schema.sql port with identical lock triggers (OLD+NEW checked) + cross-tenancy triggers; src/lib/db.ts (node:sqlite, server-only); supabase deps removed — files: web/db/schema.sql, web/src/lib/db.ts, web/scripts/lock-check.mjs — notes: `npm run lock-check` proves every tamper fails; data/ git-ignored
+- [x] 1.2 Auth guards + own OTP/session (codes and session tokens stored as SHA-256, 5 attempts, 10 min, 60 s resend) — files: web/src/lib/auth.ts, web/src/proxy.ts (sets x-pathname for ?next=)
+- [x] 1.5 logEvent — files: web/src/lib/audit.ts
+- [x] 1.3 /login: email → 6-digit code (numeric keyboard, one-time-code autofill), 60 s resend cooldown, safe `next` (relative paths only) — files: web/src/app/login/*
+- [x] 1.4 Sign-out server action + header — files: web/src/app/login/actions.ts, web/src/components/app-header.tsx
+- [x] 1.6 /dashboard guarded by requireUser — files: web/src/app/dashboard/page.tsx
+- notes: Next 16 template had `cacheComponents: true`; removed (all pages are per-user dynamic, it would force Suspense everywhere). DB opened lazily (`db()`) because parallel build workers locked SQLite at import. Fixed shadcn's self-referencing `--font-sans`.
+- Acceptance: lint, typecheck, build pass; `npm run lock-check` passes (16 tamper attempts refused incl. cross-tenancy items); Playwright run at 360 px: unauth /dashboard → /login?next=, wrong code rejected, right code → dashboard, sign-out → dashboard redirects to login. No client component imports db/auth (grep). RLS check replaced by lock-check (no network DB API exists).
+
+Summary: Supabase swapped for SQLite (`node:sqlite`) per human request. Schema + all lock triggers ported to `web/db/schema.sql`, stricter (OLD and NEW rows checked, no cross-tenancy items). Own email-OTP auth with hashed codes and hashed session tokens; in local mode the code is printed in the `npm run dev` terminal.
+Next: Phase 2 — Tenancy, templates, invites, India rules.
