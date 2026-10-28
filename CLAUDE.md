@@ -71,7 +71,7 @@ Update this file **as you work, not only at the end**, so an interrupted session
 | 0 | Setup and scaffolding | Done |
 | 1 | Database, storage and auth | Done |
 | 2 | Tenancy, templates, invites, India rules | Done |
-| 3 | Live capture, hashing, photo upload | Not started |
+| 3 | Live capture, hashing, photo upload | In progress |
 | 4 | Review, sign-off and lock | Not started |
 | 5 | Move-out and comparison | Not started |
 | 6 | Deductions and settlement | Not started |
@@ -81,8 +81,8 @@ Update this file **as you work, not only at the end**, so an interrupted session
 ## 6. Build log
 
 ### Current position
-- Phase: 3 (not started)
-- Last completed task: Phase 2 done and committed
+- Phase: 3 (in progress)
+- Last completed task: Phase 2
 - Next action: start `phases/PHASE_03_capture.md` (photos go to local disk via a server action / route, not Supabase Storage)
 - Open HUMAN STEPs: none
 
@@ -130,3 +130,17 @@ Next: Phase 2 — Tenancy, templates, invites, India rules.
 
 Summary: Tenancies can be created from 4 templates with a live deposit-cap warning (TN/MTA), in a single transaction that also creates the move-in report and its entries. Invite link with WhatsApp/copy share, server-decided join role, tenancy home with parties, report cards and audit log. Initiator can edit the checklist while move-in is Draft.
 Next: Phase 3 — Live capture, hashing, photo upload.
+
+### Phase 3 — started 2026-10-28 22:50 (SQLite variant: browser posts JPEG to a server action; server re-hashes before writing to disk, so a mismatching object is never stored)
+- [x] 3.1 ratings.ts (labels, colours, photoRequired, itemDone) + tests — files: web/src/lib/ratings.ts, ratings.test.ts; next.config serverActions.bodySizeLimit=3mb
+- [x] 3.2 loadReport tree already built in Phase 2 (web/src/lib/reports.ts; rooms/items sorted by sort,id; photos sorted by sha256) — notes: named loadReport(tenancyId, reportId), scoped by tenancy
+- [x] 3.4 Item page (6 big rating buttons, notes, photo strip, Save and next item across rooms); saveEntry guards member+initiator+DRAFT+item in tenancy — files: web/src/app/t/[id]/r/[reportId]/item/[itemId]/*
+- [x] 3.5 Camera overlay (rear lens, ≤1600 px, JPEG 0.75, Web Crypto SHA-256, tracks stopped on close/unmount, clear errors incl. insecure context); file input only when NEXT_PUBLIC_ALLOW_DEV_UPLOAD=true — files: web/src/components/camera-capture.tsx
+- [x] 3.6 uploadPhoto server action: Zod, guards, ≤2.5 MB, JPEG magic bytes, server SHA-256 must equal client hash BEFORE writing (mismatch never stored), duplicate detection, dev_upload refused unless flag on server too, logEvent photo.added; client keeps blob + Retry on failure — files: web/src/lib/photos.ts, item actions.ts
+- [x] 3.7 Photos served by member-checked route /t/[id]/photo/[photoId] (private cache 600 s, nosniff) instead of signed URLs; tap for full view; "verified ✓" with server uploaded_at; initiator delete in DRAFT (file removed only if no other row uses it) — files: web/src/app/t/[id]/photo/[photoId]/route.ts
+- [x] 3.3 Report page: header (type + status badge), progress bar "N of M items done", rooms as <details> with per-room progress, items with ✓/rating badge/photo count; read-only for viewer who is not the initiator while DRAFT — files: web/src/app/t/[id]/r/[reportId]/page.tsx
+- [x] 3.8 Validation summary "Still to do (N)" on the report page (initiator, DRAFT only): items missing a rating or a required photo, each linking to its item page — files: web/src/app/t/[id]/r/[reportId]/page.tsx
+- Acceptance: lint, typecheck, test (6), build, lock-check pass. Phone camera test still HUMAN STEP (needs https deploy or tunnel; local capture path verified via emulated Dev upload: server hash mismatch refused, duplicate refused, JPEG magic checked). Gallery pick impossible in normal mode (only camera; file input only behind NEXT_PUBLIC_ALLOW_DEV_UPLOAD on both client and server).
+
+Summary: Item capture flow complete: 6 large rating buttons, notes, live camera at ≤1600 px JPEG q0.75 with browser SHA-256, server re-hashes before writing so a mismatching object is never stored; duplicate detection; dev upload double-gated. Photos content-addressed on local disk, served only through a member-checked route. Report page shows progress, per-room checklist and a "still to do" summary.
+Next: Phase 4 — Review, sign-off and lock.
