@@ -1,0 +1,2 @@
+// logEvent()
+export {};

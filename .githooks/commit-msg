@@ -1,0 +1,12 @@
+#!/bin/sh
+# Safety net: strip any AI attribution lines from commit messages.
+# Activated in Phase 0 with: git config core.hooksPath .githooks
+MSG_FILE="$1"
+TMP_FILE="$MSG_FILE.tmp"
+
+grep -v -i -E '^(co-authored-by:.*(claude|anthropic)|claude-session:|.*generated with \[?claude code)' "$MSG_FILE" > "$TMP_FILE" || true
+
+# Remove trailing blank lines left behind
+awk 'NF {p=1} p' "$TMP_FILE" | sed -e :a -e '/^\n*$/{$d;N;ba' -e '}' > "$MSG_FILE"
+rm -f "$TMP_FILE"
+exit 0

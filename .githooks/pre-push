@@ -1,0 +1,14 @@
+#!/bin/sh
+# Refuses a push if any commit being pushed mentions Claude as co-author or carries a Claude trailer.
+# This runs for YOUR pushes too, so nothing with AI attribution ever reaches GitHub.
+z40=0000000000000000000000000000000000000000
+while read local_ref local_sha remote_ref remote_sha; do
+  [ "$local_sha" = "$z40" ] && continue
+  if [ "$remote_sha" = "$z40" ]; then range="$local_sha"; else range="$remote_sha..$local_sha"; fi
+  if git log --format=%B "$range" | grep -q -i -E 'co-authored-by:.*(claude|anthropic)|claude-session:|generated with \[?claude code'; then
+    echo "pre-push: a commit in this push contains Claude attribution. Push refused." >&2
+    echo "Fix with an interactive rebase to edit those messages, then push again." >&2
+    exit 1
+  fi
+done
+exit 0

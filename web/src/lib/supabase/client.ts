@@ -1,0 +1,2 @@
+// Browser Supabase client
+export {};
