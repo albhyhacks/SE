@@ -73,22 +73,32 @@ Update this file **as you work, not only at the end**, so an interrupted session
 | 2 | Tenancy, templates, invites, India rules | Done |
 | 3 | Live capture, hashing, photo upload | Done |
 | 4 | Review, sign-off and lock | Done |
-| 5 | Move-out and comparison | In progress |
-| 6 | Deductions and settlement | Not started |
+| 5 | Move-out and comparison | Done |
+| 6 | Deductions and settlement | In progress |
 | 7 | Printable report, QR and verify page | Not started |
 | 8 | Hardening, tests, docs and demo | Not started |
 
 ## 6. Build log
 
 ### Current position
-- Phase: 5 (in progress)
-- Last completed task: Phase 4 (commit feat(signoff))
-- Next action: `phases/PHASE_05_moveout_compare.md`
+- Phase: 6 (in progress)
+- Last completed task: Phase 5
+- Next action: `phases/PHASE_06_deductions_settlement.md`
 - Open HUMAN STEPs: none
 
 <!-- Claude Code: append phase logs below this line, newest at the bottom. -->
 
-### Phase 4 — started 2026-10-28 (SQLite variant: the “0002_sign_fn.sql Postgres function” HUMAN STEP does not apply; signature insert + status update run in one SQLite transaction with tx())
+### Phase 5 — started 2026-10-28
+- [x] 5.1 start move-out: createMoveOut action (guards: member + move-in LOCKED + no existing MOVE_OUT; move-out date Y-M-D saved as tenancies.move_out_date; creates MOVE_OUT report + one entry per item, ids generated per row) + StartMoveOutForm on tenancy home (hidden/disabled text before lock) — files: web/src/app/t/[id]/start-moveout.tsx (server actions), start-moveout-form.tsx, page.tsx — notes: fixed UNIQUE constraint failure caused by a single shared entry id in the first insert version
+- [x] 5.2 flow reuse: report/item/submit/review/countersign/self-lock actions all take report ids and never hardcode MOVE_IN (checklist editor stays MOVE_IN-only, correct); headers already show "Move-in/Move-out report" via type
+- [x] 5.3 comparison.ts: compare() pairs rooms/items by id, flags { worse: out>in && !missing, missing: became 6, newNote }, counts { unchanged, worse, missing, notCaptured }, isChanged() — files: web/src/lib/comparison.ts, comparison.test.ts — notes: 6 tests; rated-baseline semantics (unrated move-in can never flag worse)
+- [x] 5.4 compare page /t/[id]/compare: member-only, amber banner while move-out not LOCKED, 4-up summary counts, "Only changed items" toggle (default on), side-by-side cards with rating badges/notes/photo thumbnails, full-screen scroll-snap photo viewer per side — files: web/src/app/t/[id]/compare/{page.tsx,comparison-list.tsx}
+- [x] 5.5 links: tenancy home (compare button once move-out exists), locked move-out report → "Compare with the move-in report →"
+- Friendly checklist-freeze messaging: guard() redirects stale submissions back with ?msg=, protect() catches late DB trigger freezes, report page renders the message — files: checklist-actions.ts, report page
+- Acceptance (Playwright e2e, scripts/e2e-phase5.mjs, untracked; 360 px, solo initiator): move-out start absent before move-in lock; locked solo move-in → Start move-out with date → open move-out report; seeded Good→Damaged + Good→Missing items; compare shows Worse/Missing badges, counts 2 changed / rest same, only-changed filter on by default and toggleable, photo viewer opens/closes; locked move-out links to compare. Unit 25 tests. lint, typecheck, test, build, lock-check pass.
+
+Summary: After the move-in lock, either member starts a move-out report on the same frozen checklist with a move-out date; the whole capture/sign/lock flow is reused unchanged. The comparison page pairs both trees per item, flags Worse/Missing/New note, counts summaries and filters to changed items by default, with an in/out photo viewer.
+Next: Phase 6 — Deductions and settlement.
 - [x] 4.1 hash.ts: canonicalJson (recursive key sort, no whitespace, undefined dropped, throws on non-finite), sha256Hex, buildHashPayload + reportHash per SPEC §6 — files: web/src/lib/hash.ts, hash.test.ts — notes: known fixture pinned to 60cd7a62…40d540cd (8 tests incl. photo order / trim-stability / reviewer_comment excluded)
 - [x] 4.2 state.ts: transition table (DRAFT→REVIEW→DRAFT/LOCKED, self_lock DRAFT|REVIEW→LOCKED), targetStatus, assertTransition, canSubmit/canReview/canSelfLock — files: web/src/lib/state.ts, state.test.ts — notes: full 3×4 status×event matrix plus guard tests (5 tests)
 - [x] 4.3–4.7, 4.4 actions + review UI: submitReport (all-items validation + initiator signature + REVIEW), requestChanges (≥1 comment enforced, deletes signatures, → DRAFT, submitted_at cleared), countersign (seenHash === recomputed === initiator's signed hash, else { stale: true, "report changed" message }), selfLock (members ≤ 1 enforced server-side, self_attested = 1), saveReviewerComment (other party, REVIEW only; editing an item in DRAFT clears its reviewer_comment) — files: web/src/app/t/[id]/r/[reportId]/actions.ts, sign-dialog.tsx, request-changes.tsx, item-comment.tsx, web/src/app/t/[id]/r/[reportId]/item/[itemId]/actions.ts

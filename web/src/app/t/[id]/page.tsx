@@ -8,6 +8,7 @@ import { StatusBadge } from "@/components/status-badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { InviteShare } from "./invite-share";
+import { StartMoveOutForm } from "./start-moveout-form";
 
 const inr = (n: number) => `₹${n.toLocaleString("en-IN")}`;
 
@@ -52,8 +53,12 @@ export default async function TenancyHome({ params }: PageProps<"/t/[id]">) {
         {!otherJoined && <InviteShare link={`${appUrl}/join/${t.invite_code}`} address={t.address} otherLabel={roleLabel(other)} />}
 
         <ReportCard tenancyId={id} title="Move-in report" report={moveIn} />
-        <ReportCard tenancyId={id} title="Move-out report" report={moveOut}
-          disabledText={moveIn?.status === "LOCKED" ? undefined : "Available after the move-in report is locked."} />
+        <ReportMoveOutCard tenancyId={id} moveIn={moveIn} moveOut={moveOut} membersCount={members.length} />
+        {(moveOut || moveIn?.status === "LOCKED") && (
+          <Link href={`/t/${id}/compare`} className={buttonVariants({ variant: "outline", className: "h-11 w-full" })}>
+            Compare move-in with move-out →
+          </Link>
+        )}
 
         <section>
           <h2 className="mb-2 font-semibold">Activity</h2>
@@ -83,6 +88,30 @@ function ReportCard({ tenancyId, title, report, disabledText }: { tenancyId: str
       ) : report ? (
         <Link href={`/t/${tenancyId}/r/${report.id}`} className={buttonVariants({ className: "h-11 w-full" })}>Open report</Link>
       ) : null}
+    </Card>
+  );
+}
+
+function ReportMoveOutCard({ tenancyId, moveIn, moveOut, membersCount }: { tenancyId: string; moveIn: ReportRow | null; moveOut: ReportRow | null; membersCount: number }) {
+  const canStart = moveIn?.status === "LOCKED" && !moveOut;
+  return (
+    <Card className="space-y-3 p-4">
+      <div className="flex items-center justify-between">
+        <h2 className="font-semibold">Move-out report</h2>
+        <StatusBadge status={moveOut?.status ?? null} selfAttested={!!moveOut?.self_attested} />
+      </div>
+      {moveOut ? (
+        <>
+          <Link href={`/t/${tenancyId}/r/${moveOut.id}`} className={buttonVariants({ className: "h-11 w-full" })}>Open report</Link>
+          {moveOut.status !== "LOCKED" && (
+            <p className="text-sm text-muted-foreground">{membersCount < 2 ? "Complete and self-attest it." : "Complete, submit, then both sign."}</p>
+          )}
+        </>
+      ) : canStart ? (
+        <StartMoveOutForm tenancyId={tenancyId} today={new Date().toISOString().slice(0, 10)} />
+      ) : (
+        <p className="text-sm text-muted-foreground">Available after the move-in report is locked.</p>
+      )}
     </Card>
   );
 }

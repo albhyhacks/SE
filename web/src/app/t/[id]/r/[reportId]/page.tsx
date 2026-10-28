@@ -7,6 +7,7 @@ import { itemDone, photoRequired, ratingInfo } from "@/lib/ratings";
 import { listSignatures, loadReport } from "@/lib/reports";
 import { AppHeader } from "@/components/app-header";
 import { StatusBadge } from "@/components/status-badge";
+import { buttonVariants } from "@/components/ui/button";
 import { roleLabel } from "@/lib/tenancies";
 import { cn } from "@/lib/utils";
 import { ChecklistEditor } from "./checklist-editor";
@@ -15,8 +16,9 @@ import { ItemComment } from "./item-comment";
 import { RequestChanges } from "./request-changes";
 import { SignDialog } from "./sign-dialog";
 
-export default async function ReportPage({ params }: PageProps<"/t/[id]/r/[reportId]">) {
+export default async function ReportPage({ params, searchParams }: PageProps<"/t/[id]/r/[reportId]">) {
   const { id, reportId } = await params;
+  const { msg } = await searchParams;
   const { user } = await requireMember(id);
   const data = loadReport(id, reportId);
   if (!data) notFound();
@@ -45,6 +47,16 @@ export default async function ReportPage({ params }: PageProps<"/t/[id]/r/[repor
         <h1 className="text-xl font-bold">{report.type === "MOVE_IN" ? "Move-in report" : "Move-out report"}</h1>
         <StatusBadge status={status} selfAttested={!!report.self_attested} />
       </div>
+
+  {msg && (
+    <p className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-900">
+      {msg === "locked" || msg === "frozen"
+        ? "The checklist is frozen after the move-in report was locked and cannot be edited."
+        : msg === "not-yours"
+          ? "Only the report's initiator can edit the checklist while it is a draft."
+          : typeof msg === "string" ? msg : "That action is not allowed."}
+    </p>
+  )}
 
       <div className="mb-5 space-y-1">
         <div className="h-2 overflow-hidden rounded-full bg-muted">
@@ -85,6 +97,11 @@ export default async function ReportPage({ params }: PageProps<"/t/[id]/r/[repor
           </ul>
           {!!report.self_attested && (
             <p className="rounded bg-amber-100 p-2 text-amber-900">⚠️ Self-attested: only the initiator signed this report.</p>
+          )}
+          {report.type === "MOVE_OUT" && (
+            <Link href={`/t/${id}/compare`} className={buttonVariants({ className: "mt-1" })}>
+              Compare with the move-in report →
+            </Link>
           )}
         </section>
       )}
