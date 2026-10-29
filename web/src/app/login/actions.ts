@@ -9,7 +9,9 @@ const Code = z.string().trim().regex(/^\d{6}$/);
 export async function requestCode(email: string) {
   const e = Email.safeParse(email);
   if (!e.success) return { error: "Enter a valid email address." };
-  if (!issueOtp(e.data)) return { error: "A code was just sent. Wait a minute before asking again." };
+  const r = await issueOtp(e.data);
+  if (r === "wait") return { error: "A code was just sent. Wait a minute before asking again." };
+  if (r === "failed") return { error: "We couldn't send the email. Check the address and try again." };
   return { ok: true };
 }
 

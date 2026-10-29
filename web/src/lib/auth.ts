@@ -4,6 +4,7 @@ import { createHash, randomBytes, randomInt, randomUUID } from "node:crypto";
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { db, now } from "@/lib/db";
+import { sendLoginCode } from "@/lib/mail";
 
 const SESSION_COOKIE = "mp_session";
 const SESSION_DAYS = 30;
@@ -18,20 +19,26 @@ export type User = { id: string; email: string };
 export type Membership = { role: "OWNER" | "TENANT"; display_name: string };
 
 /** Creates a 6-digit code. Returns false if one was sent less than 60 s ago. */
-export function issueOtp(email: string): boolean {
+export async function issueOtp(email: string): Promise<"sent" | "wait" | "failed"> {
   const prev = db().prepare("select sent_at from otp_codes where email = ?").get(email) as
     | { sent_at: string }
     | undefined;
-  if (prev && Date.now() - Date.parse(prev.sent_at) < OTP_RESEND_SECONDS * 1000) return false;
+  if (prev && Date.now() - Date.parse(prev.sent_at) < OTP_RESEND_SECONDS * 1000) return "wait";
   const code = String(randomInt(0, 1_000_000)).padStart(6, "0");
   db().prepare(
     `insert into otp_codes (email, code_hash, expires_at, attempts, sent_at) values (?, ?, ?, 0, ?)
      on conflict(email) do update set code_hash = excluded.code_hash, expires_at = excluded.expires_at,
        attempts = 0, sent_at = excluded.sent_at`,
   ).run(email, sha256(code), inMinutes(OTP_MINUTES), now());
-  // ponytail: no mail service while on local SQLite; the code goes to the server console. Plug in SMTP/Resend here.
-  console.log(`[MoveProof] login code for ${email}: ${code}`);
-  return true;
+  try {
+    await sendLoginCode(email, code);
+    return "sent";
+  } catch (err) {
+    console.error("[MoveProof] could not email login code", err);
+    // Allow an immediate retry after a failed send.
+    db().prepare("delete from otp_codes where email = ?").run(email);
+    return "failed";
+  }
 }
 
 /** Checks the code; on success creates the user if needed and sets the session cookie. */
