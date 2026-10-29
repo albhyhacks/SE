@@ -4,6 +4,7 @@ import { requireMember } from "@/lib/auth";
 import { compare } from "@/lib/comparison";
 import { loadReport } from "@/lib/reports";
 import { getTenancy, listDeductions } from "@/lib/tenancies";
+import { buttonVariants } from "@/components/ui/button";
 import { AppHeader } from "@/components/app-header";
 import { SettlementCard } from "@/components/settlement-card";
 import { StatusBadge } from "@/components/status-badge";
@@ -26,7 +27,10 @@ export default async function ComparePage({ params }: PageProps<"/t/[id]/compare
     <>
       <AppHeader user={user} />
       <Link href={`/t/${id}`} className="text-sm text-muted-foreground">← Tenancy</Link>
-      <h1 className="mt-1 text-xl font-bold">Move-in vs move-out</h1>
+      <div className="mt-1 flex items-center justify-between gap-2">
+        <h1 className="text-xl font-bold">Move-in vs move-out</h1>
+        <Link href={`/t/${id}/print/compare`} className={buttonVariants({ variant: "outline", size: "sm" })}>Print / PDF</Link>
+      </div>
       <div className="mb-3 flex items-center gap-2">
         <StatusBadge status={moveOut?.status as "DRAFT" | "REVIEW" | "LOCKED" ?? null} selfAttested={!!moveOut?.self_attested} />
         <span className="text-sm text-muted-foreground">move-out</span>

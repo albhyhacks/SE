@@ -1,6 +1,7 @@
 // Load full report tree for UI and hashing.
 import "server-only";
 import { db } from "@/lib/db";
+import { reportHash } from "@/lib/hash";
 import type { ReportRow } from "@/lib/tenancies";
 
 export type ItemNode = {
@@ -48,4 +49,36 @@ export function listSignatures(reportId: string): SignatureRow[] {
   return db()
     .prepare("select user_id, role, typed_name, report_hash, signed_at from signatures where report_id = ? order by signed_at")
     .all(reportId) as SignatureRow[];
+}
+
+export type Verification =
+  | { found: false }
+  | {
+      found: true; type: "MOVE_IN" | "MOVE_OUT"; status: string; lockedAt: string | null; selfAttested: boolean;
+      storedHash: string | null; recomputedHash: string; signaturesMatch: boolean;
+      result: "UNCHANGED" | "MISMATCH" | "NOT_LOCKED";
+      itemCount: number; photoCount: number;
+      signers: { role: "OWNER" | "TENANT"; firstName: string; signedAt: string }[];
+    };
+
+/** Public verification (SPEC F21): recompute the hash and compare with the stored and signed hashes. */
+export function verifyReport(reportId: string): Verification {
+  const row = db().prepare("select tenancy_id from reports where id = ?").get(reportId) as { tenancy_id: string } | undefined;
+  const tree = row && loadReport(row.tenancy_id, reportId);
+  if (!tree) return { found: false };
+  const { report, rooms } = tree;
+  const recomputedHash = reportHash(tree);
+  const sigs = listSignatures(reportId);
+  const signaturesMatch = sigs.length > 0 && sigs.every((s) => s.report_hash === recomputedHash);
+  const locked = report.status === "LOCKED";
+  const items = rooms.flatMap((r) => r.items);
+  return {
+    found: true, type: report.type, status: report.status, lockedAt: report.locked_at, selfAttested: !!report.self_attested,
+    storedHash: report.content_hash, recomputedHash, signaturesMatch,
+    result: !locked ? "NOT_LOCKED" : report.content_hash === recomputedHash && signaturesMatch ? "UNCHANGED" : "MISMATCH",
+    itemCount: items.length,
+    photoCount: items.reduce((n, i) => n + i.photos.length, 0),
+    // N05: first names only.
+    signers: sigs.map((s) => ({ role: s.role, firstName: s.typed_name.trim().split(/\s+/)[0], signedAt: s.signed_at })),
+  };
 }

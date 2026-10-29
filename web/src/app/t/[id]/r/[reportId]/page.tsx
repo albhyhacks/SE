@@ -98,6 +98,10 @@ export default async function ReportPage({ params, searchParams }: PageProps<"/t
           {!!report.self_attested && (
             <p className="rounded bg-amber-100 p-2 text-amber-900">⚠️ Self-attested: only the initiator signed this report.</p>
           )}
+          <div className="grid grid-cols-2 gap-2 pt-1">
+            <Link href={`/t/${id}/print/${reportId}`} className={buttonVariants({ variant: "outline", className: "h-11" })}>Print / PDF</Link>
+            <Link href={`/verify/${reportId}`} className={buttonVariants({ variant: "outline", className: "h-11" })}>Verify</Link>
+          </div>
           {report.type === "MOVE_OUT" && (
             <Link href={`/t/${id}/compare`} className={buttonVariants({ className: "mt-1" })}>
               Compare with the move-in report →

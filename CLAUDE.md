@@ -75,15 +75,15 @@ Update this file **as you work, not only at the end**, so an interrupted session
 | 4 | Review, sign-off and lock | Done |
 | 5 | Move-out and comparison | Done |
 | 6 | Deductions and settlement | Done |
-| 7 | Printable report, QR and verify page | Not started |
+| 7 | Printable report, QR and verify page | Done |
 | 8 | Hardening, tests, docs and demo | Not started |
 
 ## 6. Build log
 
 ### Current position
-- Phase: 7 (not started)
-- Last completed task: Phase 6 done and committed
-- Next action: start `phases/PHASE_07_print_verify.md`
+- Phase: 8 (not started)
+- Last completed task: Phase 7 done and committed
+- Next action: start `phases/PHASE_08_hardening_demo.md`
 - Open HUMAN STEPs: none
 
 <!-- Claude Code: append phase logs below this line, newest at the bottom. -->
@@ -178,3 +178,15 @@ Next: Phase 4 — Review, sign-off and lock.
 
 Summary: Owner proposes itemised deductions (flagged items directly, unchanged ones behind "More" with a warning) within the deposit limit; tenant accepts or disputes with a note; owner withdraws. Settlement card on tenancy home and compare page shows totals, status chip, TN refund countdown and a consolidated deduction table.
 Next: Phase 7 — Printable report, QR and verify page.
+
+### Phase 7 — started 2026-10-29
+- [x] 7.3 Public /verify/[reportId]: verifyReport() in lib/reports.ts (recompute vs content_hash and every signature hash), Unchanged/Does not match/Not locked, first names only, counts, both hashes, paste-to-compare; bad/unknown id → friendly not-found — files: web/src/lib/reports.ts, web/src/lib/qr.ts, web/src/app/verify/[reportId]/*
+- [x] 7.1 /t/[id]/print/[reportId]: A4 print CSS (no-print, print-avoid), header with address/parties/signers, QR (qrcode → data URL) to /verify, full hash, rooms → items with rating/notes/3-per-row photos captioned upload time + sha256[0..10], footer "Not a legal contract", Print / Save as PDF button — files: web/src/app/t/[id]/print/[reportId]/page.tsx, web/src/components/{print-button,print-header}.tsx, web/src/app/globals.css
+- [x] 7.2 /t/[id]/print/compare: both reports' QR+hash, settlement summary + deductions table, changed items side by side (?all=1 toggle) — files: web/src/app/t/[id]/print/compare/page.tsx
+- [x] 7.4 Print/Verify buttons on locked report; Print on compare page; WhatsApp "report is locked, verify it here" share per locked report on tenancy home
+- [x] 7.5 scripts/verify-check.mjs (standalone, reads SQLite, duplicates SPEC §6 hashing, checks stored + every signature) — `npm run verify-check <id>`
+- Acceptance (Playwright on throwaway DB, 17/17): verify-check MATCH exit 0 and MISMATCH exit 1; public /verify (no login) shows Unchanged — so the standalone script and app hash.ts agree; first names only, no address/notes/emails/photos; pasted hash matches; bad content_hash → "Does not match" + self-attested; unknown uuid and garbage id → friendly "Report not found"; print page has hash, QR (alt = verify URL), photo caption, footer, photo loads; print media hides buttons; Chromium A4 PDF of report and comparison rendered and checked visually; compare print has 2 QRs, Worse flag, settlement; Print/Verify links on locked report; WhatsApp verify share; print page requires login. lint (0 errors), typecheck, test (31), build, lock-check pass.
+- HUMAN STEP (pending, not blocking): scan the QR on a real phone. Set NEXT_PUBLIC_APP_URL in web/.env.local to an address the phone can reach (https tunnel or LAN URL), otherwise the QR points to localhost:3000.
+
+Summary: Locked reports and the comparison print as clean A4 PDFs with QR codes and the full hash. A public /verify page recomputes the hash with the same hash.ts, checks it against the stored hash and every signature, and reveals only first names, counts and hashes. scripts/verify-check.mjs repeats the check offline for the viva.
+Next: Phase 8 — Hardening, tests, docs and demo.

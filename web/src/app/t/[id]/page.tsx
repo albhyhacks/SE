@@ -8,6 +8,7 @@ import { SettlementCard } from "@/components/settlement-card";
 import { StatusBadge } from "@/components/status-badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 import { InviteShare } from "./invite-share";
 import { StartMoveOutForm } from "./start-moveout-form";
 
@@ -50,6 +51,17 @@ export default async function TenancyHome({ params }: PageProps<"/t/[id]">) {
             );
           })}
         </Card>
+
+        {[moveIn, moveOut].filter((r) => r?.status === "LOCKED").map((r) => {
+          const what = r!.type === "MOVE_IN" ? "move-in" : "move-out";
+          const text = `Our ${what} report for ${t.address} is locked on MoveProof. Verify it here: ${appUrl}/verify/${r!.id}`;
+          return (
+            <a key={r!.id} href={`https://wa.me/?text=${encodeURIComponent(text)}`} target="_blank" rel="noopener noreferrer"
+              className={cn(buttonVariants({ variant: "outline" }), "h-11 w-full")}>
+              Share {what} verify link on WhatsApp
+            </a>
+          );
+        })}
 
         {!otherJoined && <InviteShare link={`${appUrl}/join/${t.invite_code}`} address={t.address} otherLabel={roleLabel(other)} />}
 
