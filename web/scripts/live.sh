@@ -7,5 +7,10 @@ npm run build
 npx next start -p 3000 &
 APP=$!
 trap 'kill $APP 2>/dev/null' EXIT INT TERM
-# http2 (TCP): many campus/home networks block QUIC (UDP).
-cloudflared tunnel --no-autoupdate --protocol http2 --edge-ip-version 4 --url http://localhost:3000
+# http2 (TCP): many campus/home networks block QUIC (UDP). If the connection drops, start a new
+# tunnel; the public URL changes, so look for the latest "trycloudflare.com" line.
+while true; do
+  cloudflared tunnel --no-autoupdate --protocol http2 --edge-ip-version 4 --url http://localhost:3000 || true
+  echo "*** tunnel dropped, reconnecting in 5 s (new URL below) ***"
+  sleep 5
+done
