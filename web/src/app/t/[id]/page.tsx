@@ -9,6 +9,7 @@ import { StatusBadge } from "@/components/status-badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { appUrl } from "@/lib/qr";
 import { InviteShare } from "./invite-share";
 import { StartMoveOutForm } from "./start-moveout-form";
 import { fmtIST, inr, todayIST } from "@/lib/format";
@@ -23,7 +24,7 @@ export default async function TenancyHome({ params }: PageProps<"/t/[id]">) {
   const warning = depositWarning(t.state_code, t.monthly_rent, t.deposit);
   const other = otherRole(membership.role);
   const otherJoined = members.some((m) => m.role === other);
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  const base = await appUrl();
 
   return (
     <>
@@ -54,7 +55,7 @@ export default async function TenancyHome({ params }: PageProps<"/t/[id]">) {
 
         {[moveIn, moveOut].filter((r) => r?.status === "LOCKED").map((r) => {
           const what = r!.type === "MOVE_IN" ? "move-in" : "move-out";
-          const text = `Our ${what} report for ${t.address} is locked on MoveProof. Verify it here: ${appUrl}/verify/${r!.id}`;
+          const text = `Our ${what} report for ${t.address} is locked on MoveProof. Verify it here: ${base}/verify/${r!.id}`;
           return (
             <a key={r!.id} href={`https://wa.me/?text=${encodeURIComponent(text)}`} target="_blank" rel="noopener noreferrer"
               className={cn(buttonVariants({ variant: "outline" }), "h-11 w-full")}>
@@ -63,7 +64,7 @@ export default async function TenancyHome({ params }: PageProps<"/t/[id]">) {
           );
         })}
 
-        {!otherJoined && <InviteShare link={`${appUrl}/join/${t.invite_code}`} address={t.address} otherLabel={roleLabel(other)} />}
+        {!otherJoined && <InviteShare link={`${base}/join/${t.invite_code}`} address={t.address} otherLabel={roleLabel(other)} />}
 
         <ReportCard tenancyId={id} title="Move-in report" report={moveIn} />
         <ReportMoveOutCard tenancyId={id} moveIn={moveIn} moveOut={moveOut} membersCount={members.length} />

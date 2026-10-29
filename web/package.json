@@ -11,7 +11,8 @@
     "typecheck": "next typegen && tsc --noEmit",
     "lock-check": "node scripts/lock-check.mjs",
     "verify-check": "node scripts/verify-check.mjs",
-    "try-tamper": "node scripts/try-tamper.mjs"
+    "try-tamper": "node scripts/try-tamper.mjs",
+    "live": "sh scripts/live.sh"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",

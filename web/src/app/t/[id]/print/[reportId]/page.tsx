@@ -24,7 +24,7 @@ export default async function PrintReport({ params }: PageProps<"/t/[id]/print/[
     (db().prepare("select p.id, p.uploaded_at from photos p join entries e on e.id = p.entry_id where e.report_id = ?").all(reportId) as
       { id: string; uploaded_at: string }[]).map((p) => [p.id, p.uploaded_at]),
   );
-  const url = verifyUrl(reportId);
+  const url = await verifyUrl(reportId);
   const label = report.type === "MOVE_IN" ? "Move-in report" : "Move-out report";
 
   return (

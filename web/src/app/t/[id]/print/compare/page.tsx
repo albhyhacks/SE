@@ -27,7 +27,10 @@ export default async function PrintCompare({ params, searchParams }: PageProps<"
   const items = compare(inTree, outTree).items.filter((c) => all || isChanged(c));
   const deductions = listDeductions(id);
   const s = summarise(t.tenancy.deposit, deductions);
-  const metas = await Promise.all([inTree, outTree].map(async (tree) => ({ tree, url: verifyUrl(tree.report.id), qr: await qrDataUrl(verifyUrl(tree.report.id)) })));
+  const metas = await Promise.all([inTree, outTree].map(async (tree) => {
+    const url = await verifyUrl(tree.report.id);
+    return { tree, url, qr: await qrDataUrl(url) };
+  }));
 
   return (
     <div className="space-y-4">
