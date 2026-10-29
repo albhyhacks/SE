@@ -22,6 +22,19 @@ export default async function ItemPage({ params }: PageProps<"/t/[id]/r/[reportI
     .prepare("select id, uploaded_at, source from photos where entry_id = ? order by uploaded_at")
     .all(item.entry_id) as { id: string; uploaded_at: string; source: string }[]).map((p) => ({ ...p })); // plain objects for the client component
 
+  // On move-out, show what this same item looked like at move-in so the rating is judged fairly.
+  // Photos of another member's entry sit behind the same membership-checked photo route.
+  const referencePhotos = report.type === "MOVE_OUT"
+    ? (db()
+      .prepare(
+        `select p.id, p.uploaded_at
+         from photos p join entries e on e.id = p.entry_id join reports r on r.id = e.report_id
+         where r.tenancy_id = ? and r.type = 'MOVE_IN' and e.item_id = ?
+         order by p.uploaded_at`,
+      )
+      .all(id, itemId) as { id: string; uploaded_at: string }[]).map((p) => ({ ...p }))
+    : [];
+
   return (
     <>
       <AppHeader user={user} />
@@ -35,6 +48,7 @@ export default async function ItemPage({ params }: PageProps<"/t/[id]/r/[reportI
         rating={item.rating}
         notes={item.notes}
         photos={photos}
+        referencePhotos={referencePhotos}
         canEdit={report.status === "DRAFT" && report.created_by === user.id}
         nextHref={next ? `${reportHref}/item/${next.item.id}` : reportHref}
       />

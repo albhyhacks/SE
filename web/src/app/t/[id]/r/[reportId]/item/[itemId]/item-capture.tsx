@@ -17,9 +17,8 @@ type Pending = Shot & { state: "uploading" | "failed"; error?: string };
 export function ItemCapture(props: {
   ids: { tenancyId: string; reportId: string; itemId: string };
   isOverview: boolean; rating: number | null; notes: string | null;
-  photos: Photo[]; canEdit: boolean; nextHref: string;
-}) {
-  const { tenancyId, reportId, itemId } = props.ids;
+  photos: Photo[]; referencePhotos?: Pick<Photo, "id" | "uploaded_at">[]; canEdit: boolean; nextHref: string;
+}) {  const { tenancyId, reportId, itemId } = props.ids;
   const router = useRouter();
   const [rating, setRating] = useState(props.rating);
   const [notes, setNotes] = useState(props.notes ?? "");
@@ -96,6 +95,22 @@ export function ItemCapture(props: {
         <p className="text-sm font-medium">
           Photos {needPhoto && <span className="text-destructive">· required{props.isOverview ? " (room overview)" : " for this rating"}</span>}
         </p>
+        {props.referencePhotos && props.referencePhotos.length > 0 && (
+          <div className="space-y-2 rounded-lg border bg-muted/40 p-2">
+            <p className="text-xs font-medium text-muted-foreground">Move-in — same item, for comparison</p>
+            <div className="flex gap-2 overflow-x-auto pb-1">
+              {props.referencePhotos.map((p) => (
+                <figure key={p.id} className="shrink-0">
+                  <button type="button" onClick={() => setViewing(p.id)}>
+                    {/* eslint-disable-next-line @next/next/no-img-element -- private, member-checked route */}
+                    <img src={photoUrl(p.id)} alt="Move-in photo" className="size-24 rounded-lg object-cover ring-1 ring-border" />
+                  </button>
+                  <figcaption className="w-24 text-[10px] leading-tight text-muted-foreground">{fmtIST(p.uploaded_at, "short")}</figcaption>
+                </figure>
+              ))}
+            </div>
+          </div>
+        )}
         <div className="flex gap-2 overflow-x-auto pb-1">
           {props.photos.map((p) => (
             <figure key={p.id} className="relative shrink-0">
