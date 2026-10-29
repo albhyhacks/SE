@@ -11,6 +11,7 @@ const SESSION_DAYS = 30;
 const OTP_MINUTES = 10;
 const OTP_MAX_ATTEMPTS = 5;
 const OTP_RESEND_SECONDS = 60;
+const OTP_MAX_PER_HOUR = 100;
 
 const sha256 = (s: string) => createHash("sha256").update(s).digest("hex");
 const inMinutes = (m: number) => new Date(Date.now() + m * 60_000).toISOString();
@@ -24,6 +25,10 @@ export async function issueOtp(email: string): Promise<"sent" | "wait" | "failed
     | { sent_at: string }
     | undefined;
   if (prev && Date.now() - Date.parse(prev.sent_at) < OTP_RESEND_SECONDS * 1000) return "wait";
+  // ponytail: one global hourly cap protects the Gmail account from being used to spam many addresses;
+  // add per-IP limits if the app is ever hosted for real.
+  const lastHour = db().prepare("select count(*) as n from otp_codes where sent_at > ?").get(new Date(Date.now() - 3_600_000).toISOString()) as { n: number };
+  if (lastHour.n >= OTP_MAX_PER_HOUR) return "wait";
   const code = String(randomInt(0, 1_000_000)).padStart(6, "0");
   db().prepare(
     `insert into otp_codes (email, code_hash, expires_at, attempts, sent_at) values (?, ?, ?, 0, ?)
@@ -34,9 +39,8 @@ export async function issueOtp(email: string): Promise<"sent" | "wait" | "failed
     await sendLoginCode(email, code);
     return "sent";
   } catch (err) {
+    // Keep the row so the resend limit still applies; the undelivered code is useless to anyone.
     console.error("[MoveProof] could not email login code", err);
-    // Allow an immediate retry after a failed send.
-    db().prepare("delete from otp_codes where email = ?").run(email);
     return "failed";
   }
 }

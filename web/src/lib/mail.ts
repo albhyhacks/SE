@@ -16,7 +16,7 @@ export async function sendLoginCode(to: string, code: string) {
   await transport.sendMail({
     from: `MoveProof <${process.env.SMTP_FROM || user}>`,
     to,
-    subject: `Your MoveProof code is ${code}`,
+    subject: "Your MoveProof login code",
     text: `Your MoveProof login code is ${code}\n\nIt expires in 10 minutes. If you didn't ask for it, ignore this email.`,
   });
 }
