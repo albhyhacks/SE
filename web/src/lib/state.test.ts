@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { REPORT_EVENTS, assertTransition, canReview, canSelfLock, canSubmit, targetStatus } from "./state";
+import { REPORT_EVENTS, assertTransition, canReview, canSelfLock, canSubmit, initiatorRole, targetStatus } from "./state";
 import type { ReportStatus } from "@/lib/tenancies";
 
 const STATUSES: ReportStatus[] = ["DRAFT", "REVIEW", "LOCKED"];
@@ -47,5 +47,16 @@ describe("guards", () => {
     expect(canSelfLock(tree("LOCKED"), { user_id: "u1" }, false)).toBe(false);
     expect(canSelfLock(tree("DRAFT"), { user_id: "u1" }, true)).toBe(false);
     expect(canSelfLock(tree("DRAFT"), { user_id: "u2" }, false)).toBe(false);
+  });
+});
+
+describe("initiatorRole", () => {
+  it("tenant records move-in, owner records move-out", () => {
+    expect(initiatorRole("MOVE_IN", true)).toBe("TENANT");
+    expect(initiatorRole("MOVE_IN", false)).toBe("TENANT");
+    expect(initiatorRole("MOVE_OUT", true)).toBe("OWNER");
+  });
+  it("tenant may record move-out when no owner ever joined", () => {
+    expect(initiatorRole("MOVE_OUT", false)).toBe("TENANT");
   });
 });

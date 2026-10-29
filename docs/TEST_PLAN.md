@@ -12,7 +12,7 @@
 
 Entry criteria: app builds. Exit criteria: all unit tests and integrity scripts green, every manual case below Pass, no open Sev-1 defect.
 
-## 2. Unit tests (33)
+## 2. Unit tests (35)
 
 | ID | Module | Test |
 | --- | --- | --- |
@@ -29,6 +29,8 @@ Entry criteria: app builds. Exit criteria: all unit tests and integrity scripts 
 | U11 | state | canSubmit: initiator while DRAFT only |
 | U12 | state | canReview: only the other member while REVIEW |
 | U13 | state | canSelfLock: initiator, other party not joined, not locked |
+| U34 | state | initiatorRole: tenant → move-in, owner → move-out |
+| U35 | state | initiatorRole: tenant may record move-out when no owner joined |
 | U14 | india-rules | deposit caps TN 3 / MTA 2 / Other none |
 | U15 | india-rules | warning only above the cap, never says "illegal" |
 | U16 | india-rules | TN refund due +1 month, month-end clamp, leap year, other states null |
@@ -81,7 +83,8 @@ Setup: `npm run dev`, two browsers (or two phones via an https tunnel), accounts
 | TC13 | F11 | Initiator resubmits; other party countersigns from a stale tab, then reloads and signs | Stale tab refused ("report changed"); after reload report LOCKED with both signatures and hash |
 | TC14 | F12 | Solo tenancy (no second party) → Self-attest and lock | LOCKED with "Self-attested" badge on report, tenancy home, print and verify page |
 | TC15 | F13 | `npm run try-tamper -- <lockedReportId>` | Database refuses each change |
-| TC16 | F14 | After move-in lock: Start move-out with a date → capture → sign → lock | Same items as move-in; same flow |
+| TC16 | F14 | After move-in lock: owner taps Start move-out with a date → capture → submit; tenant countersigns. Tenant looks for Start move-out | Same items as move-in; same flow; tenant sees "The owner records the move-out report" and the server refuses a tenant request |
+| TC28 | F02, F09 | Owner creates the tenancy; tenant joins | No move-in report until the tenant joins; then it exists with the tenant as initiator |
 | TC17 | F15 | Open Compare | Worse and Missing items flagged; "Only changed" on by default; photos side by side |
 | TC18 | F16 | Owner adds a ₹4000 Damage deduction on a flagged item; tries a total above the deposit; tenant looks for the button | Proposed; over-deposit refused; tenant has no Add deduction |
 | TC19 | F17 | Tenant accepts one, disputes another (Dispute disabled until a note is typed); owner withdraws the disputed one | Statuses update; owner cannot accept/dispute |
@@ -111,7 +114,7 @@ Setup: `npm run dev`, two browsers (or two phones via an https tunnel), accounts
 | F11 | Countersign with seen hash → lock | U05–U08 | TC13 | Pass (Phase 4) |
 | F12 | Self-attested lock | U13 | TC14 | Pass (Phase 4) |
 | F13 | DB lock | I01, I02 | TC15 | Pass |
-| F14 | Move-out report | — | TC16 | Pass (Phase 5) |
+| F14 | Move-out report (owner initiates) | U34, U35 | TC16, TC28 | Pass (Phase 5; role rule 2026-10-29) |
 | F15 | Comparison + flags | U20–U25 | TC17 | Pass (Phase 5) |
 | F16 | Owner proposes deductions | U29 | TC18 | Pass (Phase 6) |
 | F17 | Accept / dispute / withdraw | — | TC19 | Pass (Phase 6) |

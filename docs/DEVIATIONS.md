@@ -13,4 +13,5 @@
 | D9 | Module map | SPEC §8 list | Added `lib/db.ts`, `lib/photos.ts`, `lib/tenancies.ts` (tenancy, audit and deduction queries), `lib/qr.ts`, `lib/format.ts` (IST, ₹); `loadReport(tenancyId, reportId)` instead of `loadReportTree(reportId)` (always tenancy-scoped) | Keeps pages thin; scoping prevents cross-tenancy reads |
 | D10 | shadcn/ui | — | Base UI variant (`base-nova`): no `asChild`, links styled with `buttonVariants` | Current shadcn default |
 | D11 | Verify | admin client | `verifyReport()` in `lib/reports.ts` reuses the same `hash.ts`; also checks **every** signature's hash | — |
+| D13 | Report roles | Initiator = whoever created the report (either party) | Tenant initiates move-in, owner initiates move-out (`initiatorRole()`); owner-created tenancy gets its move-in report when the tenant joins; tenant may initiate move-out only if no owner ever joined | Human request 2026-10-29: matches who has the most at stake at each stage |
 | D12 | Env | Supabase keys | `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_ALLOW_DEV_UPLOAD`, optional `MOVEPROOF_DATA_DIR` | No keys needed |

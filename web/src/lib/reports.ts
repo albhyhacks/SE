@@ -1,5 +1,6 @@
 // Load full report tree for UI and hashing.
 import "server-only";
+import { randomUUID } from "node:crypto";
 import { db } from "@/lib/db";
 import { reportHash } from "@/lib/hash";
 import type { ReportRow } from "@/lib/tenancies";
@@ -81,4 +82,14 @@ export function verifyReport(reportId: string): Verification {
     // N05: first names only.
     signers: sigs.map((s) => ({ role: s.role, firstName: s.typed_name.trim().split(/\s+/)[0], signedAt: s.signed_at })),
   };
+}
+
+/** Creates a report with one empty entry per checklist item. Call inside tx(). */
+export function createReport(tenancyId: string, type: "MOVE_IN" | "MOVE_OUT", initiatorId: string) {
+  const reportId = randomUUID();
+  db().prepare("insert into reports (id, tenancy_id, type, created_by) values (?, ?, ?, ?)").run(reportId, tenancyId, type, initiatorId);
+  const items = db().prepare("select id from items where room_id in (select id from rooms where tenancy_id = ?)").all(tenancyId) as { id: string }[];
+  const ins = db().prepare("insert into entries (id, report_id, item_id) values (?, ?, ?)");
+  for (const item of items) ins.run(randomUUID(), reportId, item.id);
+  return reportId;
 }

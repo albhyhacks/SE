@@ -13,6 +13,7 @@ It is an evidence record, not a legal contract.
 - Invite the other party through **WhatsApp** or a copied link
 - Ratings 1–6, notes, and **live camera photos only**, each SHA-256 hashed in the browser and re-checked on the server
 - Submit → review with per-item comments → request changes or countersign → **LOCKED**; self-attested lock if the other side never joins
+- The **tenant records move-in**, the **owner records move-out**, and the other side reviews and countersigns
 - Move-out report on the same frozen checklist, **side-by-side comparison** with Worse / Missing flags
 - Itemised **deductions**: owner proposes, tenant accepts or disputes, owner withdraws; settlement summary with the TN refund deadline countdown
 - **Printable A4 PDF** with QR code, and a public **/verify** page that recomputes the hash
@@ -64,7 +65,7 @@ Any Node host with a persistent disk (a VM, Railway or Fly.io with a volume): `n
 ## Testing
 ```bash
 cd web
-npm run test                         # 33 unit tests (Vitest)
+npm run test                         # 35 unit tests (Vitest)
 npm run lint && npm run typecheck && npm run build
 npm run lock-check                   # 16 tamper attempts, all refused by triggers
 npm run try-tamper -- <reportId>     # try to edit a real locked report

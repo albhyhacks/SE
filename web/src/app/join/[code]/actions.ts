@@ -2,7 +2,9 @@
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { requireUser } from "@/lib/auth";
-import { db } from "@/lib/db";
+import { db, tx } from "@/lib/db";
+import { createReport } from "@/lib/reports";
+import { initiatorRole } from "@/lib/state";
 import { logEvent } from "@/lib/audit";
 
 const Join = z.object({ code: z.string().min(1).max(20), name: z.string().trim().min(2, "Enter your name").max(60) });
@@ -19,7 +21,12 @@ export async function joinTenancy(_: { error?: string }, form: FormData): Promis
     const role = ["OWNER", "TENANT"].find((r) => !taken.some((m) => m.role === r));
     if (!role) return { error: "Both owner and tenant have already joined this tenancy." };
     try {
-      db().prepare("insert into members (tenancy_id, user_id, role, display_name) values (?, ?, ?, ?)").run(t.id, user.id, role, p.data.name);
+      tx(() => {
+        db().prepare("insert into members (tenancy_id, user_id, role, display_name) values (?, ?, ?, ?)").run(t.id, user.id, role, p.data.name);
+        // Owner-created tenancy: the move-in report starts now, owned by the tenant who records it.
+        const hasMoveIn = db().prepare("select 1 from reports where tenancy_id = ? and type = 'MOVE_IN'").get(t.id);
+        if (!hasMoveIn && role === initiatorRole("MOVE_IN", true)) createReport(t.id, "MOVE_IN", user.id);
+      });
     } catch {
       return { error: "Someone else just joined. Refresh and try again." };
     }

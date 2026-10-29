@@ -103,7 +103,7 @@ Tenancy-level flow: MOVE_IN LOCKED → MOVE_OUT report can be created → MOVE_O
 
 The transition table lives in `src/lib/state.ts` and is unit-tested.
 
-The initiator of a report = the member who created that report (stored as `reports.created_by`).
+The initiator of a report = the member who created that report (stored as `reports.created_by`). **Role rule (change 2026-10-29):** the TENANT initiates the MOVE_IN report and the OWNER initiates the MOVE_OUT report; the other party reviews and countersigns. If the owner creates the tenancy, the MOVE_IN report is created when the tenant joins. If no owner ever joined, the tenant may initiate MOVE_OUT (self-attested). Implemented as `initiatorRole()` in `src/lib/state.ts`.
 
 ## 8. Module map (mirrors the class diagram)
 

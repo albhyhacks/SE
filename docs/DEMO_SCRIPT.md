@@ -13,7 +13,7 @@
 | 2:15 | B | Open link → sign in → Join as Owner → open report → comment on Fan → Request changes | "Signatures are wiped, so nobody can sign a version they didn't see." |
 | 2:35 | A | Fix Fan → resubmit. B signs → **LOCKED** | Show the hash and both signers. |
 | 2:50 | Terminal | `npm run try-tamper -- <reportId>` (id from the URL) | "Even direct database access is refused: the lock is enforced by triggers, not by app code." |
-| 3:10 | A | Tenancy home → Start move-out (date) → capture Chair as **Missing**, others Good → submit; B signs | — |
+| 3:10 | B | Tenancy home → Start move-out (date) → capture Chair as **Missing**, others Good → submit; A reviews and signs | "Tenant records move-in, owner records move-out; the other side always checks and signs." |
 | 3:40 | B | Compare → Chair flagged *Missing* → Add deduction ₹1500 *Missing* | "Deductions are item by item and can't exceed the deposit." |
 | 4:00 | A | Dispute with note "Chair was taken by the warden" | Settlement card: *Deductions disputed*, refund due date and countdown. |
 | 4:20 | B | Locked move-in report → Print / PDF | Show hash, QR, photos with capture time and hash prefix. |

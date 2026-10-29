@@ -48,6 +48,7 @@ export function NewTenancyForm() {
             </label>
           ))}
         </div>
+        <p className="text-xs text-muted-foreground">The tenant records the move-in report and the owner records move-out. Each is checked and signed by the other side.</p>
       </fieldset>
       <Field label="My name" id="name">
         <Input id="name" name="name" required autoComplete="name" className="h-12 text-base" />

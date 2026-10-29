@@ -41,3 +41,9 @@ export function canSelfLock(
   const isInitiator = membership?.user_id === tree.report.created_by;
   return tree.report.status !== "LOCKED" && isInitiator && !otherJoined;
 }
+
+/** Who starts (initiates) each report: the tenant records move-in, the owner records move-out.
+ *  If no owner ever joined, the tenant may record move-out too (self-attested), so they still have evidence. */
+export function initiatorRole(type: "MOVE_IN" | "MOVE_OUT", ownerJoined: boolean): "OWNER" | "TENANT" {
+  return type === "MOVE_IN" || !ownerJoined ? "TENANT" : "OWNER";
+}

@@ -10,6 +10,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { appUrl } from "@/lib/qr";
+import { initiatorRole } from "@/lib/state";
 import { InviteShare } from "./invite-share";
 import { StartMoveOutForm } from "./start-moveout-form";
 import { fmtIST, inr, todayIST } from "@/lib/format";
@@ -66,8 +67,10 @@ export default async function TenancyHome({ params }: PageProps<"/t/[id]">) {
 
         {!otherJoined && <InviteShare link={`${base}/join/${t.invite_code}`} address={t.address} otherLabel={roleLabel(other)} />}
 
-        <ReportCard tenancyId={id} title="Move-in report" report={moveIn} />
-        <ReportMoveOutCard tenancyId={id} moveIn={moveIn} moveOut={moveOut} membersCount={members.length} />
+        <ReportCard tenancyId={id} title="Move-in report" report={moveIn}
+          disabledText={moveIn ? undefined : "The tenant records the move-in report. It starts as soon as the tenant joins with the invite link."} />
+        <ReportMoveOutCard tenancyId={id} moveIn={moveIn} moveOut={moveOut} membersCount={members.length}
+          canStart={membership.role === initiatorRole("MOVE_OUT", members.some((m) => m.role === "OWNER"))} />
         {(moveOut || moveIn?.status === "LOCKED") && (
           <Link href={`/t/${id}/compare`} className={buttonVariants({ variant: "outline", className: "h-11 w-full" })}>
             Compare move-in with move-out →
@@ -116,8 +119,10 @@ function ReportCard({ tenancyId, title, report, disabledText }: { tenancyId: str
   );
 }
 
-function ReportMoveOutCard({ tenancyId, moveIn, moveOut, membersCount }: { tenancyId: string; moveIn: ReportRow | null; moveOut: ReportRow | null; membersCount: number }) {
-  const canStart = moveIn?.status === "LOCKED" && !moveOut;
+function ReportMoveOutCard({ tenancyId, moveIn, moveOut, membersCount, canStart }: {
+  tenancyId: string; moveIn: ReportRow | null; moveOut: ReportRow | null; membersCount: number; canStart: boolean;
+}) {
+  const ready = moveIn?.status === "LOCKED" && !moveOut;
   return (
     <Card className="space-y-3 p-4">
       <div className="flex items-center justify-between">
@@ -131,8 +136,10 @@ function ReportMoveOutCard({ tenancyId, moveIn, moveOut, membersCount }: { tenan
             <p className="text-sm text-muted-foreground">{membersCount < 2 ? "Complete and self-attest it." : "Complete, submit, then both sign."}</p>
           )}
         </>
-      ) : canStart ? (
+      ) : ready && canStart ? (
         <StartMoveOutForm tenancyId={tenancyId} today={todayIST()} />
+      ) : ready ? (
+        <p className="text-sm text-muted-foreground">The owner records the move-out report. You&apos;ll review and sign it.</p>
       ) : (
         <p className="text-sm text-muted-foreground">Available after the move-in report is locked.</p>
       )}

@@ -5,6 +5,8 @@ import { z } from "zod";
 import { requireUser } from "@/lib/auth";
 import { db, tx } from "@/lib/db";
 import { logEvent } from "@/lib/audit";
+import { createReport } from "@/lib/reports";
+import { initiatorRole } from "@/lib/state";
 import { TEMPLATES } from "@/lib/templates";
 
 const Rupees = z.coerce.number().int().min(0).max(100_000_000);
@@ -34,20 +36,18 @@ export async function createTenancy(_: FormState, form: FormData): Promise<FormS
       "insert into tenancies (id, created_by, address, state_code, monthly_rent, deposit, invite_code) values (?, ?, ?, ?, ?, ?, ?)",
     ).run(tenancyId, user.id, v.address, v.state, v.rent, v.deposit, randomBytes(8).toString("base64url").slice(0, 10));
     d.prepare("insert into members (tenancy_id, user_id, role, display_name) values (?, ?, ?, ?)").run(tenancyId, user.id, v.role, v.name);
-    const reportId = randomUUID();
-    d.prepare("insert into reports (id, tenancy_id, type, created_by) values (?, ?, 'MOVE_IN', ?)").run(reportId, tenancyId, user.id);
     const addRoom = d.prepare("insert into rooms (id, tenancy_id, name, sort) values (?, ?, ?, ?)");
     const addItem = d.prepare("insert into items (id, room_id, name, is_overview, sort) values (?, ?, ?, ?, ?)");
-    const addEntry = d.prepare("insert into entries (id, report_id, item_id) values (?, ?, ?)");
     template.rooms.forEach((r, ri) => {
       const roomId = randomUUID();
       addRoom.run(roomId, tenancyId, r.name, ri);
       r.items.forEach((it, ii) => {
         const itemId = randomUUID();
         addItem.run(itemId, roomId, it.name, it.is_overview ? 1 : 0, ii);
-        addEntry.run(randomUUID(), reportId, itemId);
       });
     });
+    // The tenant records move-in; if the owner created the tenancy, it starts when the tenant joins.
+    if (v.role === initiatorRole("MOVE_IN", true)) createReport(tenancyId, "MOVE_IN", user.id);
   });
   logEvent(tenancyId, user.id, "tenancy.created", { template: template.id, role: v.role });
   redirect(`/t/${tenancyId}`);
