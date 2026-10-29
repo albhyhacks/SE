@@ -8,4 +8,4 @@ npx next start -p 3000 &
 APP=$!
 trap 'kill $APP 2>/dev/null' EXIT INT TERM
 # http2 (TCP): many campus/home networks block QUIC (UDP).
-cloudflared tunnel --no-autoupdate --protocol http2 --url http://localhost:3000
+cloudflared tunnel --no-autoupdate --protocol http2 --edge-ip-version 4 --url http://localhost:3000
