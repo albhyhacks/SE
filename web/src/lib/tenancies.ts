@@ -45,6 +45,18 @@ const AUDIT_LABELS: Record<string, string> = {
   "tenancy.created": "Tenancy created",
   "member.joined": "joined",
   "checklist.edited": "Checklist edited",
+  "photo.added": "Photo added",
+  "photo.deleted": "Photo deleted",
+  "comment.added": "Review comment added",
+  "report.submitted": "Report submitted and signed",
+  "report.changes_requested": "Changes requested",
+  "report.locked": "Report countersigned and locked",
+  "report.self_locked": "Report locked (self-attested)",
+  "moveout.started": "Move-out report started",
+  "deduction.proposed": "Deduction proposed",
+  "deduction.accepted": "Deduction accepted",
+  "deduction.disputed": "Deduction disputed",
+  "deduction.withdrawn": "Deduction withdrawn",
 };
 
 export function listAudit(tenancyId: string) {
@@ -62,4 +74,19 @@ export function listAudit(tenancyId: string) {
         ? `${r.role ? roleLabel(r.role) : "Someone"} joined`
         : `${AUDIT_LABELS[r.action] ?? r.action}${r.display_name ? ` by ${r.display_name}` : ""}`,
   }));
+}
+
+export type DeductionRow = {
+  id: string; item_id: string; item_name: string; amount: number; reason: string;
+  status: "PROPOSED" | "ACCEPTED" | "DISPUTED" | "WITHDRAWN"; owner_note: string | null; tenant_note: string | null;
+};
+
+export function listDeductions(tenancyId: string) {
+  return db()
+    .prepare(
+      `select d.id, d.item_id, i.name as item_name, d.amount, d.reason, d.status, d.owner_note, d.tenant_note
+       from deductions d join items i on i.id = d.item_id where d.tenancy_id = ? order by d.rowid`,
+    )
+    .all(tenancyId)
+    .map((r) => ({ ...r })) as DeductionRow[];
 }

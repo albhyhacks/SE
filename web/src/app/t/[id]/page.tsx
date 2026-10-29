@@ -2,8 +2,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireMember } from "@/lib/auth";
 import { depositWarning, STATE_LABELS } from "@/lib/india-rules";
-import { getTenancy, listAudit, otherRole, roleLabel, type ReportRow } from "@/lib/tenancies";
+import { getTenancy, listAudit, listDeductions, otherRole, roleLabel, type ReportRow } from "@/lib/tenancies";
 import { AppHeader } from "@/components/app-header";
+import { SettlementCard } from "@/components/settlement-card";
 import { StatusBadge } from "@/components/status-badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -58,6 +59,16 @@ export default async function TenancyHome({ params }: PageProps<"/t/[id]">) {
           <Link href={`/t/${id}/compare`} className={buttonVariants({ variant: "outline", className: "h-11 w-full" })}>
             Compare move-in with move-out →
           </Link>
+        )}
+
+        {moveOut?.status === "LOCKED" && (
+          <SettlementCard
+            deposit={t.deposit}
+            deductions={listDeductions(id)}
+            stateCode={t.state_code}
+            moveOutDate={t.move_out_date}
+            tenancyId={id}
+          />
         )}
 
         <section>

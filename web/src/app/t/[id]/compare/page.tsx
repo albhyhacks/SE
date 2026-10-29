@@ -3,21 +3,24 @@ import { notFound } from "next/navigation";
 import { requireMember } from "@/lib/auth";
 import { compare } from "@/lib/comparison";
 import { loadReport } from "@/lib/reports";
-import { getTenancy } from "@/lib/tenancies";
+import { getTenancy, listDeductions } from "@/lib/tenancies";
 import { AppHeader } from "@/components/app-header";
+import { SettlementCard } from "@/components/settlement-card";
 import { StatusBadge } from "@/components/status-badge";
 import { ComparisonList } from "./comparison-list";
 
 export default async function ComparePage({ params }: PageProps<"/t/[id]/compare">) {
   const { id } = await params;
-  const { user } = await requireMember(id);
+  const { user, membership } = await requireMember(id);
   const data = getTenancy(id);
   if (!data) notFound();
-  const { moveIn, moveOut } = data;
+  const { tenancy, moveIn, moveOut } = data;
   const inTree = moveIn ? loadReport(id, moveIn.id) : null;
   const outTree = moveOut ? loadReport(id, moveOut.id) : null;
   if (!inTree || !outTree) notFound();
+  const locked = moveOut?.status === "LOCKED";
   const comparison = compare(inTree, outTree);
+  const deductions = listDeductions(id);
 
   return (
     <>
@@ -34,6 +37,8 @@ export default async function ComparePage({ params }: PageProps<"/t/[id]/compare
         </p>
       )}
 
+      <div className="mb-4"><SettlementCard deposit={tenancy.deposit} deductions={deductions} stateCode={tenancy.state_code} moveOutDate={tenancy.move_out_date} tenancyId={id} /></div>
+
       <div className="mb-4 grid grid-cols-4 gap-2 text-center text-xs">
         <div className="rounded-lg border p-2"><span className="block text-lg font-semibold">{comparison.counts.unchanged}</span>same</div>
         <div className="rounded-lg border border-red-200 bg-red-50 p-2"><span className="block text-lg font-semibold text-red-800">{comparison.counts.worse}</span>worse</div>
@@ -43,6 +48,9 @@ export default async function ComparePage({ params }: PageProps<"/t/[id]/compare
 
       <ComparisonList
         tenancyId={id}
+        role={membership.role}
+        locked={locked}
+        deductions={deductions}
         items={comparison.items.map((c) => ({ ...c, in: { ...c.in }, out: c.out && { ...c.out } }))}
       />
     </>

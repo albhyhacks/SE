@@ -74,16 +74,16 @@ Update this file **as you work, not only at the end**, so an interrupted session
 | 3 | Live capture, hashing, photo upload | Done |
 | 4 | Review, sign-off and lock | Done |
 | 5 | Move-out and comparison | Done |
-| 6 | Deductions and settlement | In progress |
+| 6 | Deductions and settlement | Done |
 | 7 | Printable report, QR and verify page | Not started |
 | 8 | Hardening, tests, docs and demo | Not started |
 
 ## 6. Build log
 
 ### Current position
-- Phase: 6 (in progress)
-- Last completed task: Phase 5
-- Next action: `phases/PHASE_06_deductions_settlement.md`
+- Phase: 7 (not started)
+- Last completed task: Phase 6 done and committed
+- Next action: start `phases/PHASE_07_print_verify.md`
 - Open HUMAN STEPs: none
 
 <!-- Claude Code: append phase logs below this line, newest at the bottom. -->
@@ -167,3 +167,14 @@ Next: Phase 3 — Live capture, hashing, photo upload.
 
 Summary: Item capture flow complete: 6 large rating buttons, notes, live camera at ≤1600 px JPEG q0.75 with browser SHA-256, server re-hashes before writing so a mismatching object is never stored; duplicate detection; dev upload double-gated. Photos content-addressed on local disk, served only through a member-checked route. Report page shows progress, per-room checklist and a "still to do" summary.
 Next: Phase 4 — Review, sign-off and lock.
+### Phase 6 — started 2026-10-28 (resumed 2026-10-29 in a new session; previous session left uncommitted work)
+- [x] 6.1 settlement.ts: summarise, settlementStatus, canAddDeduction, refundCountdownText + tests — files: web/src/lib/settlement.ts, settlement.test.ts
+- [x] 6.2–6.4 (draft) server actions propose/respond/withdraw + dialog/forms on comparison cards — files: web/src/app/t/[id]/compare/{actions.ts,deduction-forms.tsx,comparison-list.tsx,page.tsx}
+- [x] 6.5 (draft) SettlementCard on tenancy home + compare page — files: web/src/components/settlement-card.tsx
+- [x] 6.R review fixes done — empty-note dispute was accepted (bug); propose check+insert not atomic; respond/withdraw status not re-checked in UPDATE; consolidated table lacked status/notes and printed amount twice; deduction query duplicated; data.e2e-backup/ not ignored
+- [x] 6.R fixes: dispute needs a non-blank note (server); propose check+insert in one tx(); respond/withdraw UPDATE re-checks status (`.changes`); amount uses z.coerce (form strings were ALWAYS rejected before — owner could never propose); shared listDeductions() in lib/tenancies.ts; consolidated table with item/reason/amount/status/notes; plain-language audit labels for every logged action; MOVEPROOF_DATA_DIR env for throwaway test DBs; data.e2e-backup/ git-ignored — files: compare/actions.ts, settlement-card.tsx, lib/tenancies.ts, lib/db.ts, settlement.test.ts
+- notes: untracked web/scripts/e2e-phase6.mjs restore step uses `web/data` paths while running from web/, so it never restores data — do not rely on it; leftover web/data and web/data.e2e-backup hold only e2e test data.
+- Acceptance (Playwright, 360 px, throwaway DB via MOVEPROOF_DATA_DIR, captured server-action requests replayed with the other party's cookie): tenant propose refused; owner accept/dispute refused; 4000+7000 > 10000 deposit refused; blank-note dispute refused server-side; PENDING → DISPUTED → SETTLED; TN move-out 10 days ago → "Refund due in 21 days"; refund now ₹6,000. Unit 31 tests. lint (0 errors), typecheck, test, build, lock-check, try-tamper pass.
+
+Summary: Owner proposes itemised deductions (flagged items directly, unchanged ones behind "More" with a warning) within the deposit limit; tenant accepts or disputes with a note; owner withdraws. Settlement card on tenancy home and compare page shows totals, status chip, TN refund countdown and a consolidated deduction table.
+Next: Phase 7 — Printable report, QR and verify page.

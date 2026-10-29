@@ -5,16 +5,30 @@ import { isChanged, type ComparedItem } from "@/lib/comparison";
 import { ratingInfo } from "@/lib/ratings";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { ProposeDeduction, RespondDeduction, WithdrawDeduction, type Deduction } from "./deduction-forms";
 
 type Item = ComparedItem & {
   in: { rating: number | null; notes: string | null; photos: { id: string; sha256: string }[] };
   out: { rating: number | null; notes: string | null; photos: { id: string; sha256: string }[] } | null;
 };
 
-export function ComparisonList({ tenancyId, items }: { tenancyId: string; items: Item[] }) {
+const REASON: Record<string, string> = { CLEANING: "Cleaning", DAMAGE: "Damage", MISSING: "Missing", OTHER: "Other" };
+const STATUS_CLS: Record<string, string> = {
+  PROPOSED: "bg-yellow-100 text-yellow-900",
+  ACCEPTED: "bg-emerald-100 text-emerald-900",
+  DISPUTED: "bg-red-100 text-red-900",
+  WITHDRAWN: "bg-muted text-muted-foreground line-through",
+};
+const inr = (n: number) => `₹${n.toLocaleString("en-IN")}`;
+
+export function ComparisonList({ tenancyId, items, role, locked, deductions }: {
+  tenancyId: string; items: Item[]; role: "OWNER" | "TENANT"; locked: boolean; deductions: Deduction[];
+}) {
   // Default per SPEC: only changed items.
   const [onlyChanged, setOnlyChanged] = useState(true);
   const [viewing, setViewing] = useState<{ item: Item; side: "in" | "out"; start: number } | null>(null);
+  const byItem = new Map<string, Deduction[]>();
+  for (const d of deductions) byItem.set(d.item_id, [...(byItem.get(d.item_id) ?? []), d]);
   const visible = onlyChanged ? items.filter(isChanged) : items;
 
   return (
@@ -35,6 +49,7 @@ export function ComparisonList({ tenancyId, items }: { tenancyId: string; items:
               {c.flags.missing && <span className="rounded bg-zinc-800 px-2 py-0.5 text-xs text-white">Missing</span>}
               {c.flags.newNote && !c.flags.worse && !c.flags.missing && <span className="rounded bg-amber-100 px-2 py-0.5 text-xs text-amber-900">New note</span>}
             </div>
+            {byItem.size > 0 && byItem.get(c.itemId) && <DeductionList tenancyId={tenancyId} role={role} rows={byItem.get(c.itemId)!} />}
             <div className="grid grid-cols-2 gap-3 text-sm">
               <SidePanel tenancyId={tenancyId} label="Move-in" side={c.in} onOpenPhoto={(i) => setViewing({ item: c, side: "in", start: i })} />
               {c.out ? (
@@ -43,12 +58,51 @@ export function ComparisonList({ tenancyId, items }: { tenancyId: string; items:
                 <div className="text-muted-foreground">Not captured yet</div>
               )}
             </div>
+            {canAddDeduction(role) && (
+              c.flags.worse || c.flags.missing ? (
+                <div className="mt-2"><ProposeDeduction tenancyId={tenancyId} itemId={c.itemId} itemName={c.itemName} locked={locked} /></div>
+              ) : (
+                <details className="mt-2">
+                  <summary className="w-fit cursor-pointer text-xs text-muted-foreground">More</summary>
+                  <p className="mt-1 text-xs text-amber-900">⚠️ This item looks unchanged in the photos.</p>
+                  <div className="mt-1"><ProposeDeduction tenancyId={tenancyId} itemId={c.itemId} itemName={c.itemName} locked={locked} /></div>
+                </details>
+              )
+            )}
           </li>
         ))}
       </ul>
 
       {viewing && <PhotoViewer tenancyId={tenancyId} view={viewing} onClose={() => setViewing(null)} />}
     </div>
+  );
+}
+
+function canAddDeduction(role: "OWNER" | "TENANT") {
+  return role === "OWNER";
+}
+
+/** Deductions already proposed on this item, with the per-role actions. */
+function DeductionList({ tenancyId, role, rows }: { tenancyId: string; role: "OWNER" | "TENANT"; rows: Deduction[] }) {
+  return (
+    <ul className="mb-3 space-y-2">
+      {rows.map((d) => (
+        <li key={d.id} className="rounded bg-muted/50 p-2 text-xs">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className={`rounded px-1.5 py-0.5 font-medium ${STATUS_CLS[d.status] ?? ""}`}>{REASON[d.reason] ?? d.reason}</span>
+            <span className="font-medium">{inr(d.amount)}</span>
+            {role === "OWNER" && (d.status === "PROPOSED" || d.status === "DISPUTED") && (
+              <WithdrawDeduction tenancyId={tenancyId} deductionId={d.id} />
+            )}
+          </div>
+          {d.owner_note && <p className="mt-1 text-muted-foreground">Owner: {d.owner_note}</p>}
+          {d.tenant_note && <p className="mt-1 text-muted-foreground">Tenant: {d.tenant_note}</p>}
+          {role === "TENANT" && d.status === "PROPOSED" && (
+            <RespondDeduction tenancyId={tenancyId} deductionId={d.id} />
+          )}
+        </li>
+      ))}
+    </ul>
   );
 }
 

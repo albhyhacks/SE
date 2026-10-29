@@ -4,7 +4,8 @@ import { DatabaseSync } from "node:sqlite";
 import { mkdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 
-export const DATA_DIR = path.join(process.cwd(), "data");
+// MOVEPROOF_DATA_DIR lets tests run against a throwaway folder.
+export const DATA_DIR = process.env.MOVEPROOF_DATA_DIR || path.join(process.cwd(), "data");
 
 export function openDb(file = path.join(DATA_DIR, "moveproof.db")) {
   if (file !== ":memory:") mkdirSync(path.dirname(file), { recursive: true });
