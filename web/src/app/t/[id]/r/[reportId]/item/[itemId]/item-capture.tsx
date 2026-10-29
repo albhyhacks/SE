@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { photoRequired, RATINGS } from "@/lib/ratings";
 import { cn } from "@/lib/utils";
 import { deletePhoto, saveEntry, uploadPhoto } from "./actions";
+import { fmtIST } from "@/lib/format";
 
 type Photo = { id: string; uploaded_at: string; source: string };
 type Pending = Shot & { state: "uploading" | "failed"; error?: string };
@@ -103,7 +104,7 @@ export function ItemCapture(props: {
                 <img src={photoUrl(p.id)} alt="Item photo" className="size-24 rounded-lg object-cover" />
               </button>
               <figcaption className="w-24 text-[10px] leading-tight text-muted-foreground">
-                {new Date(p.uploaded_at).toLocaleString("en-IN", { dateStyle: "short", timeStyle: "short" })} · verified ✓
+                {fmtIST(p.uploaded_at, "short")} · verified ✓
                 {p.source === "dev_upload" && <span className="text-destructive"> · dev upload</span>}
               </figcaption>
               {props.canEdit && (

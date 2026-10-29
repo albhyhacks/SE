@@ -6,6 +6,7 @@ import { ratingInfo } from "@/lib/ratings";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ProposeDeduction, RespondDeduction, WithdrawDeduction, type Deduction } from "./deduction-forms";
+import { inr } from "@/lib/format";
 
 type Item = ComparedItem & {
   in: { rating: number | null; notes: string | null; photos: { id: string; sha256: string }[] };
@@ -19,7 +20,6 @@ const STATUS_CLS: Record<string, string> = {
   DISPUTED: "bg-red-100 text-red-900",
   WITHDRAWN: "bg-muted text-muted-foreground line-through",
 };
-const inr = (n: number) => `₹${n.toLocaleString("en-IN")}`;
 
 export function ComparisonList({ tenancyId, items, role, locked, deductions }: {
   tenancyId: string; items: Item[]; role: "OWNER" | "TENANT"; locked: boolean; deductions: Deduction[];

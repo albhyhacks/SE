@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { type StateCode, refundDueDate } from "@/lib/india-rules";
 import { refundCountdownText, settlementStatus, summarise } from "@/lib/settlement";
 import type { DeductionRow } from "@/lib/tenancies";
+import { inr, todayIST } from "@/lib/format";
 
 const LABEL: Record<string, string> = {
   NO_DEDUCTIONS: "No deductions",
@@ -13,7 +14,6 @@ const LABEL: Record<string, string> = {
 };
 
 
-const inr = (n: number) => `₹${n.toLocaleString("en-IN")}`;
 const REASON: Record<string, string> = { CLEANING: "Cleaning", DAMAGE: "Damage", MISSING: "Missing", OTHER: "Other" };
 const STATUS_LABEL: Record<string, string> = { PROPOSED: "Pending", ACCEPTED: "Accepted", DISPUTED: "Disputed", WITHDRAWN: "Withdrawn" };
 const STATUS_CLS: Record<string, string> = {
@@ -29,7 +29,7 @@ export function SettlementCard({ deposit, deductions, stateCode, moveOutDate, te
   const s = summarise(deposit, deductions);
   const status = settlementStatus(deductions);
   const due = moveOutDate && stateCode === "TN" ? refundDueDate(stateCode, moveOutDate) : null;
-  const countdown = due ? refundCountdownText(due, new Date().toISOString().slice(0, 10)) : null;
+  const countdown = due ? refundCountdownText(due, todayIST()) : null;
 
   return (
     <Card className="space-y-3 p-4 text-sm">

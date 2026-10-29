@@ -18,6 +18,7 @@ describe("india-rules", () => {
     expect(refundDueDate("TN", "2026-05-15")).toBe("2026-06-15");
     expect(refundDueDate("TN", "2026-01-31")).toBe("2026-02-28");
     expect(refundDueDate("TN", "2026-12-10")).toBe("2027-01-10");
+    expect(refundDueDate("TN", "2028-01-31")).toBe("2028-02-29"); // leap year
     expect(refundDueDate("MTA", "2026-05-15")).toBeNull();
   });
 });

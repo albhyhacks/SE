@@ -25,11 +25,9 @@ function refresh(tenancyId: string) {
 
 /** Context shared by all deduction actions: tenancy + both statuses + the user's role. */
 async function guard(tenancyId: string) {
-  const tenancy = db()
-    .prepare("select id, deposit from tenancies where id = ?")
-    .get(tenancyId) as { id: string; deposit: number } | undefined;
-  if (!tenancy) throw new Error("Tenancy not found");
-  const { user, membership } = await requireMember(tenancyId);
+  // Auth first, so non-members learn nothing about which tenancies exist.
+  const { user, membership } = await requireMember(Id.parse(tenancyId));
+  const tenancy = db().prepare("select id, deposit from tenancies where id = ?").get(tenancyId) as { id: string; deposit: number };
   const moveOut = db()
     .prepare("select id, status from reports where tenancy_id = ? and type = 'MOVE_OUT'")
     .get(tenancyId) as { id: string; status: string } | undefined;

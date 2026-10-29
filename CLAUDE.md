@@ -76,15 +76,15 @@ Update this file **as you work, not only at the end**, so an interrupted session
 | 5 | Move-out and comparison | Done |
 | 6 | Deductions and settlement | Done |
 | 7 | Printable report, QR and verify page | Done |
-| 8 | Hardening, tests, docs and demo | Not started |
+| 8 | Hardening, tests, docs and demo | Done |
 
 ## 6. Build log
 
 ### Current position
-- Phase: 8 (not started)
-- Last completed task: Phase 7 done and committed
-- Next action: start `phases/PHASE_08_hardening_demo.md`
-- Open HUMAN STEPs: none
+- Phase: ALL DONE (0–8)
+- Last completed task: Phase 8 committed
+- Next action: human runs the final HUMAN STEP (phone demo, then push)
+- Open HUMAN STEPs: real-phone test (camera, WhatsApp, QR scan) over https; push to GitHub
 
 <!-- Claude Code: append phase logs below this line, newest at the bottom. -->
 
@@ -190,3 +190,20 @@ Next: Phase 7 — Printable report, QR and verify page.
 
 Summary: Locked reports and the comparison print as clean A4 PDFs with QR codes and the full hash. A public /verify page recomputes the hash with the same hash.ts, checks it against the stored hash and every signature, and reveals only first names, counts and hashes. scripts/verify-check.mjs repeats the check offline for the viva.
 Next: Phase 8 — Hardening, tests, docs and demo.
+
+### Phase 8 — started 2026-10-29
+- [x] 8.1 Security pass: every action Zod → requireUser/requireMember → role/state guard (13 action files reviewed); compare guard now authenticates BEFORE tenancy lookup (no existence leak) and validates tenancyId; start-moveout validates tenancyId and rejects impossible dates (2026-02-30, month 13 no longer throws); no client file imports db/auth/photos/reports/tenancies/qr/audit; .env.local ignored; git history has no secrets; .env.example cleaned to the 3 real vars — files: compare/actions.ts, start-moveout.tsx, web/.env.example — notes: ponytail: OTP brute force bounded by 5 tries/code + 60 s resend only; add per-IP rate limiting when hosted
+- [x] 8.2 UX: app-wide error.tsx (Try again / Go to my tenancies) and not-found.tsx; SubmitButton (useFormStatus) gives checklist editor forms a pending state; editor controls raised to 44 px (h-11) — files: web/src/app/{error,not-found}.tsx, web/src/components/submit-button.tsx, checklist-editor.tsx
+- [x] 8.3 Audit: one plain sentence per action ("Priya submitted and signed the move-in report", "Ravi proposed a deduction of ₹4,000 on Fan"); report events now carry `type`; all times via fmtIST (Asia/Kolkata); refund countdown and move-out "today" use todayIST() (was UTC date — wrong before 05:30 IST) — files: web/src/lib/format.ts, web/src/lib/tenancies.ts, report actions.ts, 8 pages/components
+- [x] 8.4 Tests: unit tests exist for india-rules, hash, state, comparison, settlement, ratings; added format.test.ts (IST, ₹ grouping) and leap-year refund date — 33 tests green
+- [x] 8.5 docs/TEST_PLAN.md (levels, 33 unit tests, 3 integrity scripts, 27 manual cases, F01–F22 traceability matrix), USER_MANUAL.md, DEMO_SCRIPT.md (5 min, try-tamper live), DEVIATIONS.md (D1–D12); try-tamper now also takes a real <reportId> (npm run try-tamper)
+- [x] 8.6 Root README rewritten as project README (problem, features, stack, architecture, integrity design, setup incl. terminal login codes + https tunnel for camera, deploy needs persistent disk, testing, limitations, future work); web/README.md points to it
+- [x] 8.7 Final checks: lint 0 errors (5 warnings, all in untracked scripts/e2e-phase6.mjs), typecheck, 33 unit tests, build, lock-check, try-tamper green. Regression Playwright run (throwaway DB) 27/27: all Phase 7 checks + audit sentences + no horizontal scroll at 360 px on 8 screens + 404 page.
+
+Summary: Security pass (auth-before-lookup, id/date validation), IST everywhere, plain-sentence activity log, error/not-found pages, pending states, SE docs (test plan with traceability, user manual, demo script, deviations) and a project README.
+HUMAN STEP (end): 1) Run docs/DEMO_SCRIPT.md once on two phones via an https tunnel with NEXT_PUBLIC_APP_URL set. 2) Instead of supabase/checks/lock_check.sql, run `cd web && npm run lock-check` and `npm run try-tamper -- <lockedReportId>`; every attempt must be refused. 3) When happy, push yourself: `git remote add origin …` then `git push -u origin main`.
+
+## Project summary
+**Works:** email-OTP login; tenancy from 4 templates with TN/MTA deposit warning; WhatsApp/copy invite and join; live-camera capture with browser + server SHA-256; review/comments/request changes; two-party signing bound to the report hash; self-attested lock; DB-enforced lock (SQLite triggers); move-out on frozen checklist; side-by-side comparison with flags; itemised deductions with accept/dispute/withdraw and settlement + TN refund countdown; A4 print with QR; public verify page; plain-language IST audit log.
+**Known issues / not verified by me:** camera, WhatsApp and QR scan on a real phone (needs https); login codes go to the server console (no email provider); no per-IP rate limit; SQLite needs a persistent-disk host (not Vercel). Untracked helper scripts web/scripts/e2e-phase{4,5,6}.mjs are machine-specific; e2e-phase6.mjs fails to restore web/data (wrong path), so don't run it on real data.
+**Demo commands:** `cd web && npm install && npm run build && npm start` (codes print in this terminal) · `npm run test` · `npm run lock-check` · `npm run try-tamper -- <reportId>` · `npm run verify-check -- <reportId>`.

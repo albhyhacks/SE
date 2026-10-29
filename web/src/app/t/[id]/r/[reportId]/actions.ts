@@ -70,7 +70,7 @@ export async function submitReport(tenancyId: string, reportId: string, typedNam
     db().prepare("update reports set status = 'REVIEW', submitted_at = ? where id = ?")
       .run(now(), g.data.report.id);
   });
-  logEvent(tenancyId, user.id, "report.submitted", { hash: g.hash });
+  logEvent(tenancyId, user.id, "report.submitted", { hash: g.hash, type: g.data.report.type });
   refresh(tenancyId, reportId);
   return {};
 }
@@ -92,7 +92,7 @@ export async function requestChanges(tenancyId: string, reportId: string): Promi
     db().prepare("update reports set status = 'DRAFT', submitted_at = null where id = ?")
       .run(g.data.report.id);
   });
-  logEvent(tenancyId, user.id, "report.changes_requested", {});
+  logEvent(tenancyId, user.id, "report.changes_requested", { type: g.data.report.type });
   refresh(tenancyId, reportId);
   return {};
 }
@@ -125,7 +125,7 @@ export async function countersign(tenancyId: string, reportId: string, seenHash:
     db().prepare("update reports set status = 'LOCKED', content_hash = ?, locked_at = ? where id = ?")
       .run(g.hash, now(), g.data.report.id);
   });
-  logEvent(tenancyId, user.id, "report.locked", { hash: g.hash });
+  logEvent(tenancyId, user.id, "report.locked", { hash: g.hash, type: g.data.report.type });
   refresh(tenancyId, reportId);
   return {};
 }
@@ -148,7 +148,7 @@ export async function selfLock(tenancyId: string, reportId: string, typedName: u
     db().prepare("update reports set status = 'LOCKED', content_hash = ?, locked_at = ?, self_attested = 1 where id = ?")
       .run(g.hash, now(), g.data.report.id);
   });
-  logEvent(tenancyId, user.id, "report.self_locked", { hash: g.hash });
+  logEvent(tenancyId, user.id, "report.self_locked", { hash: g.hash, type: g.data.report.type });
   refresh(tenancyId, reportId);
   return {};
 }

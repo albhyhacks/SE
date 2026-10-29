@@ -15,6 +15,7 @@ import { CopyHash } from "./copy-hash";
 import { ItemComment } from "./item-comment";
 import { RequestChanges } from "./request-changes";
 import { SignDialog } from "./sign-dialog";
+import { fmtIST } from "@/lib/format";
 
 export default async function ReportPage({ params, searchParams }: PageProps<"/t/[id]/r/[reportId]">) {
   const { id, reportId } = await params;
@@ -82,7 +83,7 @@ export default async function ReportPage({ params, searchParams }: PageProps<"/t
           <div className="flex items-center gap-2">
             <span aria-hidden>🔒</span>
             <h2 className="font-semibold">
-              Locked {report.locked_at ? new Date(report.locked_at).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" }) : ""}
+              Locked {fmtIST(report.locked_at)}
             </h2>
           </div>
           <p className="font-mono text-xs break-all">{renderedHash}</p>
@@ -91,7 +92,7 @@ export default async function ReportPage({ params, searchParams }: PageProps<"/t
             {signatures.map((s) => (
               <li key={s.user_id}>
                 ✍️ {roleLabel(s.role)} — <strong>{s.typed_name}</strong>{" "}
-                <span className="text-muted-foreground">signed {new Date(s.signed_at).toLocaleString("en-IN", { dateStyle: "short", timeStyle: "short" })}</span>
+                <span className="text-muted-foreground">signed {fmtIST(s.signed_at, "short")}</span>
               </li>
             ))}
           </ul>

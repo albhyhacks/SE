@@ -11,8 +11,8 @@ import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { InviteShare } from "./invite-share";
 import { StartMoveOutForm } from "./start-moveout-form";
+import { fmtIST, inr, todayIST } from "@/lib/format";
 
-const inr = (n: number) => `₹${n.toLocaleString("en-IN")}`;
 
 export default async function TenancyHome({ params }: PageProps<"/t/[id]">) {
   const { id } = await params;
@@ -89,7 +89,7 @@ export default async function TenancyHome({ params }: PageProps<"/t/[id]">) {
             {listAudit(id).map((a, i) => (
               <li key={i} className="flex justify-between gap-2">
                 <span>{a.text}</span>
-                <time className="shrink-0 text-muted-foreground">{new Date(a.at).toLocaleString("en-IN", { dateStyle: "short", timeStyle: "short" })}</time>
+                <time className="shrink-0 text-muted-foreground">{fmtIST(a.at, "short")}</time>
               </li>
             ))}
           </ol>
@@ -131,7 +131,7 @@ function ReportMoveOutCard({ tenancyId, moveIn, moveOut, membersCount }: { tenan
           )}
         </>
       ) : canStart ? (
-        <StartMoveOutForm tenancyId={tenancyId} today={new Date().toISOString().slice(0, 10)} />
+        <StartMoveOutForm tenancyId={tenancyId} today={todayIST()} />
       ) : (
         <p className="text-sm text-muted-foreground">Available after the move-in report is locked.</p>
       )}

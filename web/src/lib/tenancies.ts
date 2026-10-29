@@ -41,23 +41,32 @@ export function listTenancies(userId: string) {
     .all(userId) as { id: string; address: string; role: Role; move_in: ReportStatus | null; move_out: ReportStatus | null }[];
 }
 
-const AUDIT_LABELS: Record<string, string> = {
-  "tenancy.created": "Tenancy created",
-  "member.joined": "joined",
-  "checklist.edited": "Checklist edited",
-  "photo.added": "Photo added",
-  "photo.deleted": "Photo deleted",
-  "comment.added": "Review comment added",
-  "report.submitted": "Report submitted and signed",
-  "report.changes_requested": "Changes requested",
-  "report.locked": "Report countersigned and locked",
-  "report.self_locked": "Report locked (self-attested)",
-  "moveout.started": "Move-out report started",
-  "deduction.proposed": "Deduction proposed",
-  "deduction.accepted": "Deduction accepted",
-  "deduction.disputed": "Deduction disputed",
-  "deduction.withdrawn": "Deduction withdrawn",
-};
+type AuditDetail = { type?: string; item?: string; amount?: number; role?: Role; what?: string };
+
+/** One plain sentence per audit action, e.g. "Priya signed the move-in report". */
+function auditSentence(action: string, who: string, d: AuditDetail) {
+  const report = d.type === "MOVE_OUT" ? "the move-out report" : d.type === "MOVE_IN" ? "the move-in report" : "the report";
+  const amt = d.amount ? ` of ₹${d.amount.toLocaleString("en-IN")}` : "";
+  const on = d.item ? ` on ${d.item}` : "";
+  switch (action) {
+    case "tenancy.created": return `${who} created the tenancy`;
+    case "member.joined": return `${who} joined as ${d.role ? roleLabel(d.role).toLowerCase() : "member"}`;
+    case "checklist.edited": return `${who} edited the checklist${d.what ? ` (${d.what})` : ""}`;
+    case "photo.added": return `${who} added a photo${on}`;
+    case "photo.deleted": return `${who} deleted a photo${on}`;
+    case "comment.added": return `${who} commented${on}`;
+    case "report.submitted": return `${who} submitted and signed ${report}`;
+    case "report.changes_requested": return `${who} asked for changes to ${report}`;
+    case "report.locked": return `${who} signed ${report} — now locked`;
+    case "report.self_locked": return `${who} locked ${report} alone (self-attested)`;
+    case "moveout.started": return `${who} started the move-out report`;
+    case "deduction.proposed": return `${who} proposed a deduction${amt}${on}`;
+    case "deduction.accepted": return `${who} accepted a deduction${amt}`;
+    case "deduction.disputed": return `${who} disputed a deduction${amt}`;
+    case "deduction.withdrawn": return `${who} withdrew a deduction${amt}`;
+    default: return `${who}: ${action}`;
+  }
+}
 
 export function listAudit(tenancyId: string) {
   const rows = db()
@@ -67,13 +76,11 @@ export function listAudit(tenancyId: string) {
        where a.tenancy_id = ? order by a.id desc limit 20`,
     )
     .all(tenancyId) as { action: string; detail: string; created_at: string; display_name: string | null; role: Role | null }[];
-  return rows.map((r) => ({
-    at: r.created_at,
-    text:
-      r.action === "member.joined"
-        ? `${r.role ? roleLabel(r.role) : "Someone"} joined`
-        : `${AUDIT_LABELS[r.action] ?? r.action}${r.display_name ? ` by ${r.display_name}` : ""}`,
-  }));
+  return rows.map((r) => {
+    let detail: AuditDetail = {};
+    try { detail = JSON.parse(r.detail); } catch { /* keep empty */ }
+    return { at: r.created_at, text: auditSentence(r.action, r.display_name ?? "Someone", detail) };
+  });
 }
 
 export type DeductionRow = {

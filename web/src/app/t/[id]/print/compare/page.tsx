@@ -10,9 +10,9 @@ import { summarise, settlementStatus } from "@/lib/settlement";
 import { getTenancy, listDeductions } from "@/lib/tenancies";
 import { PrintButton } from "@/components/print-button";
 import { PrintFooter, PrintParties, PrintReportMeta } from "@/components/print-header";
+import { inr } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Move-out comparison · MoveProof" };
-const inr = (n: number) => `₹${n.toLocaleString("en-IN")}`;
 const STATUS: Record<string, string> = { NO_DEDUCTIONS: "No deductions", PENDING: "Pending", DISPUTED: "Disputed", SETTLED: "Settled" };
 
 export default async function PrintCompare({ params, searchParams }: PageProps<"/t/[id]/print/compare">) {

@@ -11,10 +11,14 @@ import { db, tx } from "@/lib/db";
 
 export type StartMoveOutResult = { error?: string };
 
-const Date_ = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+// Real calendar dates only (2026-02-30 is refused).
+const Date_ = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine((d) => {
+  const t = Date.parse(`${d}T00:00:00Z`);
+  return !Number.isNaN(t) && new Date(t).toISOString().startsWith(d);
+});
 
 export async function createMoveOut(tenancyId: string, _prev: StartMoveOutResult, form: FormData): Promise<StartMoveOutResult> {
-  const { user } = await requireMember(tenancyId);
+  const { user } = await requireMember(z.string().uuid().parse(tenancyId));
 
   const reports = db()
     .prepare("select id, type, status, created_by from reports where tenancy_id = ?")

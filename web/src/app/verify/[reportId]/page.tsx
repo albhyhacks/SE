@@ -4,10 +4,11 @@ import Link from "next/link";
 import { verifyReport } from "@/lib/reports";
 import { Card } from "@/components/ui/card";
 import { HashCheck } from "./hash-check";
+import { fmtIST } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Verify report · MoveProof", robots: { index: false } };
 
-const fmt = (iso: string | null) => (iso ? new Date(iso).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" }) : "—");
+const fmt = (iso: string | null) => fmtIST(iso);
 
 export default async function VerifyPage({ params }: PageProps<"/verify/[reportId]">) {
   const { reportId } = await params;

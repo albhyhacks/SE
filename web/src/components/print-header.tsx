@@ -1,7 +1,8 @@
 // Shared header block for printable pages: parties, lock, hash, QR.
 import type { Member } from "@/lib/tenancies";
+import { fmtIST } from "@/lib/format";
 
-const fmt = (iso: string | null) => (iso ? new Date(iso).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" }) : "—");
+const fmt = (iso: string | null) => fmtIST(iso);
 
 export function PrintReportMeta({ label, lockedAt, selfAttested, hash, qr, verifyUrl }: {
   label: string; lockedAt: string | null; selfAttested: boolean; hash: string | null; qr: string; verifyUrl: string;
